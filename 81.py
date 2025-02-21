@@ -1,8 +1,6 @@
 def add_one(some_list):
-    dig = ''
-    for element in some_list:
-        dig += str(element)
-    return [int(i) for i in str(int(dig) + 1)]
+    dig = str(int(''.join([str(element) for element in some_list])) + 1)
+    return [int(i) for i in dig]
 
 assert add_one([1, 2, 3, 4]) == [1, 2, 3, 5], 'Test1'
 assert add_one([9, 9, 9]) == [1, 0, 0, 0], 'Test2'
