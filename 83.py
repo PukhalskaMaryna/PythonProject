@@ -1,6 +1,6 @@
 def find_unique_value(some_list):
     result = None
-    for element in set(some_list):
+    for element in some_list:
         if some_list.count(element) == 1:
             result = element
             break
