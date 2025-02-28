@@ -1,24 +1,18 @@
-my_tuple = (
-    [19, 13, -2, 1],
-    [18, 19, -1, -1],
-    [20, 25, -2, -2],
-    [12, 31, -1, -2],
-    [20, 19, 1, -5]
-)
+# my_tuple = ([19, 13, -2, 1],[18, 19, -1, -1],[20, 25, -2, -2],[12, 31, -1, -2],[20, 19, 1, -5])
 
-a = 7
-b = 27
-counter = 0
+with open("F:/OPERU.KHO.VMAP/СОТРУДНИКИ/PUKHALSK/РІЗНЕ/AtoC/part24_1.txt", 'r') as file:
+    my_tuple = tuple(
+        [int(line[0]), int(line[1]), int(line[3]), int(line[4])]
+        for line in (line.replace('@', ',').replace(' ', '').split(',') for line in file)
+    )
+
+a,b,counter = 200000000000000,400000000000000,0
 
 def is_in_range(x, y, a, b):
     return a <= x <= b and a <= y <= b
 
-# def is_moving_towards(x, y, x1, y1, Vx, Vy):
-#     return (Vx > 0 and x >= x1) or (Vx < 0 and x <= x1) and (Vy > 0 and y >= y1) or (Vy < 0 and y <= y1)
-
 def is_moving_towards(vector, coord, coord1):
     return (vector >= 0 and coord >= coord1) or (vector <= 0 and coord <= coord1)
-
 
 for i, lst_1 in enumerate(my_tuple):
     for lst_2 in my_tuple[i + 1:]:
