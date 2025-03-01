@@ -1,33 +1,56 @@
-# my_tuple = ([19, 13, -2, 1],[18, 19, -1, -1],[20, 25, -2, -2],[12, 31, -1, -2],[20, 19, 1, -5])
+my_tuple = ([19, 13, 30, -2,  1, -2],
+            [18, 19, 22, -1, -1, -2],
+            [20, 25, 34, -2, -2, -4],
+            [12, 31, 28, -1, -2, -1],
+            [20, 19, 15,  1, -5, -3]
+            )
 
-with open("F:/OPERU.KHO.VMAP/СОТРУДНИКИ/PUKHALSK/РІЗНЕ/AtoC/part24_1.txt", 'r') as file:
-    my_tuple = tuple(
-        [int(line[0]), int(line[1]), int(line[3]), int(line[4])]
-        for line in (line.replace('@', ',').replace(' ', '').split(',') for line in file)
-    )
+# забираємо дані з файлу і формуємо кортеж із списків,
+# кожен список містить 2 координати і 2 швидкості
+# with open("F:/OPERU.KHO.VMAP/СОТРУДНИКИ/PUKHALSK/РІЗНЕ/AtoC/part24_1.txt", 'r') as file:
+#     my_tuple = tuple(
+#         [int(line[0]), int(line[1]), int(line[3]), int(line[4])]
+#         for line in (line.replace('@', ',').replace(' ', '').split(',') for line in file)
+#     )
+# проміжок і лічильник, швидкості каменю по кожній координаті
+a,b,nanosecond,Vx,Vy,Vz = 7,27,0,0,0,1
+start_position = [a,a,a,Vx,Vy,Vz]
 
-a,b,counter = 200000000000000,400000000000000,0
+def does_it_break_hailstone(start_position:list,my_tuple:tuple):
+    """функція для перевірки циклом, чи зі стартової позиції"""
+    for lst in my_tuple:
+        x1, y1, z1, Vx1, Vy1, Vz1 = lst  # координати градинки
+        x2, y2, z2, Vx2, Vy2, Vz2 = start_position # координати каменю
+        for lst in my_tuple:
 
-# функція для перевірки належності одного числа до проміжку
+
+
+
+
 def is_in_range(x, a, b):
+    """функція для перевірки належності одного числа до проміжку"""
     return a <= x <= b
 
 def is_moving_towards(vector, coord, coord1):
+    """функція для перевірки належності координати променя, бо рух градинки - це промінь, а не пряма"""
     return (vector >= 0 and coord >= coord1) or (vector <= 0 and coord <= coord1)
 
-for i, lst_1 in enumerate(my_tuple):
-    for lst_2 in my_tuple[i + 1:]:
-        x1, y1, Vx1, Vy1 = lst_1
-        x2, y2, Vx2, Vy2 = lst_2
+for i, lst_1 in enumerate(my_tuple): # перебір елементів кортежу разом з їх позицією в кортежі
+    for lst_2 in my_tuple[i + 1:]:  # для кожного елемента в кортежі дивимось перетин з кожним наступним,
+                                    # не повертаючись до попередніх
+        x1, y1, Vx1, Vy1 = lst_1 # координати і швидкості точки 1
+        x2, y2, Vx2, Vy2 = lst_2 # координати і швидкості точки 2
 
-        up = (x2 - x1) * Vy2 - (y2 - y1) * Vx2
-        down = Vx1 * Vy2 - Vy1 * Vx2
+        up = (x2 - x1) * Vy2 - (y2 - y1) * Vx2 # частина формули для знаходження точки перетину
+        down = Vx1 * Vy2 - Vy1 * Vx2 # частина формули для знаходження точки перетину
 
-        if down != 0:
+        if down != 0: # перевірка на паралельність
             t = up / down
-            x = x1 + t * Vx1
-            y = y1 + t * Vy1
+            x = x1 + t * Vx1 # x точки перетину
+            y = y1 + t * Vy1 # y точки перетину
 
+            # перевірка функціями чи точка перетину на променях, які описують градинки
+            # + перевірка чи в межах заданого квадрату
             if is_in_range(x, a, b) and \
                     is_in_range(y, a, b) and \
                     is_moving_towards(Vx1, x, x1) and \
