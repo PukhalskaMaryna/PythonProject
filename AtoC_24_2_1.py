@@ -1,18 +1,21 @@
 import itertools # permutations - функція обробки списку і генерування варіантів перестановки
 
-my_lst = [[19, 13, 30, -2,  1, -2],
-            [18, 19, 22, -1, -1, -2],
-            [20, 25, 34, -2, -2, -4],
-            [12, 31, 28, -1, -2, -1],
-            [20, 19, 15,  1, -5, -3]
-            ]
+# all_my_lst = [[19, 13, 30, -2,  1, -2],
+#             [18, 19, 22, -1, -1, -2],
+#             [20, 25, 34, -2, -2, -4],
+#             [12, 31, 28, -1, -2, -1],
+#             [20, 19, 15,  1, -5, -3]
+#             ]
 
 # забираємо дані з файлу і формуємо кортеж із списків
-# with open("F:/OPERU.KHO.VMAP/СОТРУДНИКИ/PUKHALSK/РІЗНЕ/AtoC/part24_1.txt", 'r') as file:
-#     my_tuple = tuple(
-#         [int(line[0]), int(line[1]), int(line[3]), int(line[4])]
-#         for line in (line.replace('@', ',').replace(' ', '').split(',') for line in file)
-#     )
+with open("F:/OPERU.KHO.VMAP/СОТРУДНИКИ/PUKHALSK/РІЗНЕ/AtoC/part24_1.txt", 'r', encoding='utf-8') as file:
+    all_my_lst = [
+        [int(line[0]), int(line[1]), int(line[2]), int(line[3]), int(line[4]), int(line[5].replace('\n', ''))]
+        for line in (
+            line.replace('@', ',').replace(' ', '').split(',')  # Заміна @ на кому і видалення пробілів
+            for line in file)]
+
+
 
 def find_time(x1, x2, v_x1, v_x2):
     """
@@ -47,6 +50,9 @@ def generate_hailstone_variants(lst: list, t1, t2):
     delta_t = t2 - t1 # наносекунди між першим і другим зіткненнями
 
     for hailstones in list(itertools.permutations(lst)):
+        # print('__' * 20)
+        # print(hailstones)
+        # print('__' * 20)
         # оскільки будуть перебрані всі варіанти перестановок,
         # то на якійсь перестановці отримаємо вірний варіант
         # спочатку беремо для кожної перестановки 2 перші градинки, як 1-ше і 2-ге зіткнення
@@ -105,21 +111,37 @@ def generate_hailstone_variants(lst: list, t1, t2):
                 break
             # якщо знайшовся варіант, який перейшов всі перевірки
             else:
-                return ([x, y, z], x + y + z)
+                return [x, y, z]
 
-def final_func(max_test):
+def final_func(insert_my_lst:list,max_i,max_ii):
     """
-    ф-ія проганяє перевірку всіх градинок на наявність каменю, який перетне,
-    перебираючм в циклі варіанти наносекунд до 1-го і 2-го зіткнень
-    :param max_test: максимальне значення наносекунд для перевірки, щоб не запускати дуже великі числа
+    ф-ія проганяє перевірку списку градинок на перетин з каменем,
+    перебираючм в циклі варіанти наносекунд до першого і другого зіткнень
+    :param insert_my_lst: частина списку із трьох градинок
+    :param max_i: максимальне значення наносекунд для першого зіткнення
+    :param max_ii: максимальне значення наносекунд для другого зіткнення
     :return: суму початкових координат і самі координати
     """
-    for i in range(1,max_test + 1):
-        for ii in range(i+1, max_test + 1):
-            result = generate_hailstone_variants(my_lst, i, ii)
-            if result is not None:
-               return result
+    for i in range(1,max_i + 1):
+        # print(f'i = {i}')
+        for ii in range(i+1, max_ii + 1):
+            # print(f'   ii = {ii}')
+            if generate_hailstone_variants(insert_my_lst, i, ii) is not None:
+               return generate_hailstone_variants(insert_my_lst, i, ii)
+    return []
+
+iii = 0
+for my_lst in itertools.combinations(all_my_lst, 3):
+    iii += 1
+    result = final_func(list(my_lst),5,6)
+    if iii % 1000000 == 0:
+        print(iii // 1000000)
+    if result:
+        print(result)
+        break
+else:
+    print('без результату')
 
 # для старту припускаємо, що перше і друге зіткнення станеться мнш ніж через 100 секунд
 # якщо не спрацює - треба збільшувати максимум
-print(final_func(100))
+# print(final_func(my_lst,10,10))
