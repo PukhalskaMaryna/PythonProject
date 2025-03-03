@@ -8,6 +8,7 @@ def prime_generator(end):
             yield count
         count += 1
 
+
 from inspect import isgenerator
 
 gen = prime_generator(1)
