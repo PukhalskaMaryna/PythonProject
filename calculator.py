@@ -12,8 +12,9 @@ def calculator(num1, num2, operation):
             'multiply': num1 * num2,
             'divide': num1 / num2
             }
+    result = 0 if not operation in operation_dict else operation_dict[operation]
 
-    return 0 if not operation in operation_dict else operation_dict[operation]
+    return result
 
 # Перевірка
 assert calculator(5, 3, 'add') == 8
