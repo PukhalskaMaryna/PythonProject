@@ -1,10 +1,7 @@
-def cube_numbers(n):
-    return n ** 3
-
 def generate_cube_numbers(end):
     n = 2
-    while cube_numbers(n) <= end:
-        yield cube_numbers(n)
+    while n ** 3 <= end:
+        yield n ** 3
         n += 1
 
 from inspect import isgenerator
