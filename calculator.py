@@ -7,13 +7,14 @@ def calculator(num1, num2, operation):
     :param operation: Операція (додавання, віднімання, множення, ділення).
     :return: Результат операції.
     """
-    result = 0
+    operation_dict = {'add': num1 + num2,
+            'subtract': num1 - num2,
+            'multiply': num1 * num2,
+            'divide': num1 / num2
+            }
 
-    return result
+    return 0 if not operation in operation_dict else operation_dict[operation]
 
 # Перевірка
 assert calculator(5, 3, 'add') == 8
-'add'
-"subtract"
-"multiply"
-"divide"
+print('OK')
