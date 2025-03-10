@@ -5,7 +5,7 @@ def add_decorator(number):
     :param number: Число для додавання.
     :return: Декоратор для додавання числа до результату функції.
     """
-    def decorator(func,*args, **kwargs):
+    def decorator(func):
         def wrapper(*args, **kwargs):
             # Викликаємо оригінальну функцію і додаємо до її результату число
             result = func(*args, **kwargs)
