@@ -1,16 +1,30 @@
-import numpy as np
+import codecs
+import os
 
-# Матриця коефіцієнтів A
-A = np.array([[1, 2],
-              [1, 4]])
 
-# Вектор правих частин B
-B = np.array([5, 10])
+def delete_html_tags(html_file, result_file='cleaned.txt'):
+    # Перевірка на існування файлу
+    if not os.path.isfile(html_file):
+        print(f"Файл {html_file} не знайдено!")
+        return
 
-# Знаходимо обернену матрицю A
-A_inv = np.linalg.inv(A)
+    try:
+        with codecs.open(html_file, 'r', 'utf-8') as file:
+            html = file.read()
 
-# Знаходимо розв'язок X
-X = np.dot(A_inv, B)
+        while html.find('<') != -1:
+            html = html[:html.find('<')] + html[html.find('>') + 1:]
 
-print(X)
+        html = '\n'.join([html_line.lstrip() for html_line in html.splitlines() if html_line.strip() != ''])
+
+        # Запис у результатний файл
+        with codecs.open(result_file, 'w', 'utf-8') as file:
+            file.write(html)
+        print(f"Файл {result_file} успішно створено!")
+
+    except Exception as e:
+        print(f"Сталася помилка: {e}")
+
+
+# Виклик функції
+delete_html_tags('draft.html', 'cleaner.txt')
