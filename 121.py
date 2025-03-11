@@ -10,3 +10,5 @@ def delete_html_tags(html_file, result_file='cleaned.txt'):
 
       with codecs.open(result_file, 'w', 'utf-8') as file:
           file.write(html)
+
+delete_html_tags('draft.html')
