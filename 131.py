@@ -26,16 +26,16 @@ class Group:
     def add_student(self, student):
         self.group.add(student)
 
-    def delete_student(self, last_name):
-        student_delete = self.find_student(last_name)
-        if student_delete:
-            self.group.remove(student_delete)
-
     def find_student(self, last_name):
         for student in self.group:
             if student.last_name == last_name:
                 return student
         return None
+
+    def delete_student(self, last_name):
+        student_delete = self.find_student(last_name)
+        if student_delete:
+            self.group.remove(student_delete)
 
     def __str__(self):
         all_students = '\n'.join(str(student) for student in self.group)
