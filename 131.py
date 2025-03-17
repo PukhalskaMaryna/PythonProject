@@ -17,7 +17,6 @@ class Student(Human):
     def __str__(self):
         return f"{super().__str__()}, record book: {self.record_book}"
 
-
 class Group:
     def __init__(self, number):
         self.number = number
