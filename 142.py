@@ -27,7 +27,6 @@ class ErrorForMaxCount(Exception):
         self.msg = msg
         super().__init__(self.msg)
 
-
 class Group:
     def __init__(self, number):
         self.number = number
