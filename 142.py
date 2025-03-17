@@ -17,6 +17,16 @@ class Student(Human):
     def __str__(self):
         return f"{super().__str__()}, record book: {self.record_book}"
 
+    def __eq__(self, student):
+        return str(self) == str(student)
+
+
+class ErrorForMaxCount(Exception):
+    """Виключення, коли група перевищує ліміт студентів"""
+    def __init__(self, msg="У групі може бути не більше 10 студентів"):
+        self.msg = msg
+        super().__init__(self.msg)
+
 
 class Group:
     def __init__(self, number):
@@ -24,6 +34,8 @@ class Group:
         self.group = []
 
     def add_student(self, student):
+        if len(self.group) >= 10:
+            raise ErrorForMaxCount()
         self.group.append(student)
 
     def find_student(self, last_name):
@@ -43,20 +55,26 @@ class Group:
 
 
 # Тестування:
+# st1 = Student('Male', 30, 'Steve', 'Jobs', 'AN142')
+# st2 = Student('Female', 25, 'Liza', 'Taylor', 'AN145')
+# gr = Group('PD1')
+# gr.add_student(st1)
+# gr.add_student(st2)
+#
+# print(gr)
+#
+# # Перевірка:
+# assert gr.find_student('Jobs') == st1
+
+
 st1 = Student('Male', 30, 'Steve', 'Jobs', 'AN142')
 st2 = Student('Female', 25, 'Liza', 'Taylor', 'AN145')
 gr = Group('PD1')
 gr.add_student(st1)
 gr.add_student(st2)
-
 print(gr)
-
-# Тести:
-assert str(gr.find_student('Jobs')) == str(st1), 'Test1'
-assert gr.find_student('Jobs2') is None, 'Test2'
-assert isinstance(gr.find_student('Jobs'), Student) is True, 'Метод поиска должен возвращать экземпляр'
+assert gr.find_student('Jobs') == st1  # 'Steve Jobs'
+assert gr.find_student('Jobs2') is None
 
 gr.delete_student('Taylor')
-print(gr)  # Only one student
-
-gr.delete_student('Taylor')  # No error!
+print(gr) # Only one student

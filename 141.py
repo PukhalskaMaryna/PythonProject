@@ -28,12 +28,12 @@ class ErrorForMaxCount(Exception):
 class Group:
     def __init__(self, number):
         self.number = number
-        self.group = set()
+        self.group = []
 
     def add_student(self, student):
         if len(self.group) >= 10:
             raise ErrorForMaxCount()
-        self.group.add(student)
+        self.group.append(student)
 
     def find_student(self, last_name):
         for student in self.group:
