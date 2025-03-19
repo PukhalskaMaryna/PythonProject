@@ -358,6 +358,7 @@ Client(gender='Ж').search_clients(db1,clients_table)
 Client(gender='Ч').search_clients(db1,clients_table)
 Client(birth_date='21.10.1983',gender='Ж').search_clients(db1,clients_table)
 
+
 print(db1.count_rows(clients_table))
 Client(gender='Ж').delete_client(db1,clients_table)
 print(db1.count_rows(clients_table))
