@@ -1,4 +1,5 @@
-# import dearpygui.dearpygui as dpg
+import tkinter as tk
+from tkinter import ttk
 import sqlite3
 import csv
 import os
@@ -96,7 +97,7 @@ class DB:
         """
         self.execute_query(f"DROP TABLE IF EXISTS {table}")
 
-    def insert_into_table(self, table, row):
+    def insert_into_table(self, table, row = tuple()):
         """
         Метод для вставки одного рядка
 
@@ -112,8 +113,10 @@ class DB:
             result = self.execute_query(f"SELECT MAX(id) FROM {table}")
             next_id = 1 if not result or result[0][0] is None else result[0][0] + 1
 
-            # передаємо значення як параметри в SQL-запит
-            query = f"INSERT INTO {table} (id, last_name, first_name, middle_name, gender, birth_date) VALUES (?, ?, ?, ?, ?, ?)"
+            columns_result = self.execute_query(f"PRAGMA table_info({table})") #список полів таблиці
+            columns = [column[1] for column in columns_result]
+
+            query = f"INSERT INTO {table} ({", ".join(columns)}) VALUES ({", ".join("?" for _ in columns)})"
             self.execute_query(query, (next_id, *row))
         except sqlite3.Error as sql_error:
             print(f"Помилка insert_into_table: {sql_error}")
@@ -175,23 +178,27 @@ class DB:
         except sqlite3.Error as sql_error:
             print(f"Помилка count_rows: {sql_error}")
 
-#################################################################
-db1 = DB('db.db')
 
-# print(db1)
-db1.open_connection()
-db1.drop_table('clients')
-db1.create_table('clients',"last_name TEXT,first_name TEXT, middle_name TEXT, gender TEXT, birth_date DATE")
+# метод для обробки дат
+def process_date(date_str):
+    """
+    Обробка дати в форматі %d.%m.%Y або %Y-%m-%d.
 
-# my_table = 'clients'
-# cnt_rows = db1.count_rows(my_table)
-# db1.insert_into_table('clients', (cnt_rows + 1,"Пухальська2", "Марина"))
+    :param date_str: Str, дата для обробки
+    :return: str або None, дата у форматі %d.%m.%Y або None, якщо дата не вірна
+    """
 
+    if re.match(r'^\d{2}\.\d{2}\.\d{4}$', date_str):
+        return date_str
+    try:
+        # Спробуємо перетворити дату з формату %Y-%m-%d в %d.%m.%Y
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%d.%m.%Y")
+    except ValueError:
+        return None
 
-#################################################################
 
 class Client:
-    def __init__(self, last_name="", first_name="", middle_name="", gender="", birth_date=None):
+    def __init__(self, last_name = '', first_name = '', middle_name = '', gender = '', birth_date = None, death_date = None):
         """
         Ініціалізація об'єкта клієнта.
 
@@ -200,83 +207,85 @@ class Client:
         :param middle_name: str, по батькові клієнта
         :param gender: str, стать клієнта
         :param birth_date: дата народження клієнта
+        :param death_date: дата смерті клієнта (необов'язково)
         """
         self.last_name = last_name
         self.first_name = first_name
         self.middle_name = middle_name
         self.gender = gender
         self.birth_date = birth_date
+        self.death_date = death_date
 
     def __str__(self):
-        return f"{self.last_name} {self.first_name} {self.middle_name} - {self.gender} - {self.birth_date}"
+        return f"{self.last_name} {self.first_name} {self.middle_name} - {self.gender} - {self.birth_date} - {self.death_date}"
 
     def add_one_client(self, db=DB(), table=str()):
         """
-        Додавання одного клієнта
+        Додавання одного клієнта.
 
         :param db: DB, підключення до бази даних
         :param table: str, назва таблиці
         :return: None
         """
+        # ДН
+        correct_birth_date = process_date(self.birth_date)
+        if not correct_birth_date:
+            print(f"Помилка: невірний формат дати народження для клієнта {self.last_name}. Пропускаємо.")
+            return
 
-        def is_valid_date(date_str):
-            date_pattern = r'^\d{2}\.\d{2}\.\d{4}$'
-            return not bool(re.match(date_pattern, date_str))
-
-        if not is_valid_date(self.birth_date):
-            correct_birth_date = self.birth_date
-        else:
-            try:
-                correct_birth_date = datetime.strptime(self.birth_date, "%Y-%m-%d").strftime("%d.%m.%Y")
-            except ValueError:
-                print(f"Помилка: невірний формат дати для клієнта {self.last_name}. Пропускаємо.")
+        # ДС
+        if self.death_date:
+            correct_death_date = process_date(self.death_date)
+            if correct_death_date is None:
+                print(f"Помилка: невірний формат дати смерті для клієнта {self.last_name}. Пропускаємо.")
                 return
+        else:
+            correct_death_date = None
 
-        row = (self.last_name, self.first_name, self.middle_name, self.gender, correct_birth_date)
+        row = (self.last_name, self.first_name, self.middle_name, self.gender, correct_birth_date, correct_death_date)
         db.insert_into_table(table, row)
 
     @staticmethod
     def add_client_from_csv(db=DB(), table=str(), my_file_name='import_clients.csv'):
         """
-        Додавання клієнтів із csv
+        Додавання клієнтів із csv.
 
         :param db: DB, підключення до бази даних
         :param table: str, назва таблиці
         :param my_file_name: назва csv для імпорту, за замовчуванням 'import_clients.csv'
         :return: None
         """
-
-        def is_valid_date(date_str):
-            date_pattern = r'^\d{2}\.\d{2}\.\d{4}$'
-            return not bool(re.match(date_pattern, date_str))
-
         if not os.path.exists(my_file_name):
             print(f"Файл '{my_file_name}' відсутній")
             return
 
         with open(my_file_name, newline='', encoding='utf-8-sig') as csv_file:
             for row in csv.DictReader(csv_file):
-                # а чи всі поля у файлі?
                 if 'last_name' not in row or 'first_name' not in row or 'middle_name' not in row or 'gender' not in row or 'birth_date' not in row:
                     print("Невірний формат файлу")
                     continue
 
-                if is_valid_date(row['birth_date']):
-                    birth_date = row['birth_date']  # Залишаємо без змін, якщо дата вже у вірному форматі
-                else:
-                    try:
-                        birth_date = datetime.strptime(row['birth_date'], "%d.%m.%Y").strftime("%Y-%m-%d")
-                    except ValueError:
-                        print(
-                            f"Помилка: невірний формат дати для клієнта {row['id']}. Пропускаємо.")
-                        continue
+                # Обробка дати народження
+                birth_date = process_date(row['birth_date'])
+                if birth_date is None:
+                    print(f"Помилка: невірний формат дати для клієнта {row['id']}. Пропускаємо.")
+                    continue
 
-                client = Client(row["last_name"], row["first_name"], row["middle_name"], row["gender"], birth_date)
+                # Обробка дати смерті (якщо є)
+                if 'death_date' in row and row['death_date']:
+                    death_date = process_date(row['death_date'])
+                    if death_date is None:
+                        print(f"Помилка: невірний формат дати смерті для клієнта {row['id']}. Пропускаємо.")
+                        continue
+                else:
+                    death_date = None
+
+                client = Client(row["last_name"], row["first_name"], row["middle_name"], row["gender"], birth_date, death_date)
                 client.add_one_client(db, table)
 
     def find_clients(self, db=DB(), table=str(), export_to_csv=True):
         """
-        Пошук клієнтів
+        Пошук клієнтів.
 
         :param db: DB, підключення до бази даних
         :param table: str, назва таблиці
@@ -299,9 +308,15 @@ class Client:
             conditions.append("gender = ?")
             params.append(self.gender)
         if self.birth_date:
-            birth_date = datetime.strptime(self.birth_date, "%d.%m.%Y").strftime("%Y-%m-%d")
-            conditions.append("birth_date = ?")
-            params.append(birth_date)
+            birth_date = process_date(self.birth_date)
+            if birth_date:
+                conditions.append("birth_date = ?")
+                params.append(birth_date)
+        if self.death_date:
+            death_date = process_date(self.death_date)
+            if death_date:
+                conditions.append("death_date = ?")
+                params.append(death_date)
 
         if not conditions:
             print("Вкажіть хоч 1 параметр для пошуку")
@@ -318,7 +333,8 @@ class Client:
                 first_name=row[2],
                 middle_name=row[3],
                 gender=row[4],
-                birth_date=row[5]
+                birth_date=row[5],
+                death_date=row[6]  # Додаємо обробку дати смерті
             )
             client_id = row[0]
             clients.update({client_id: client})
@@ -327,20 +343,20 @@ class Client:
         if export_to_csv:
             file_name = 'found_clients.csv'
             i = 1
-            while os.path.exists(file_name):  # якщо файл з такою назвою вже існує, додаємо цифру
+            while os.path.exists(file_name):
                 file_name = f'found_clients_{i}.csv'
                 i += 1
 
             with open(file_name, mode='w', newline='', encoding='utf-8-sig') as file:
                 writer = csv.writer(file)
-                writer.writerow(["id", "last_name", "first_name", "middle_name", "gender", "birth_date"])
+                writer.writerow(["id", "last_name", "first_name", "middle_name", "gender", "birth_date", "death_date"])
                 for client_id, client in clients.items():
                     writer.writerow([client_id, client.last_name, client.first_name,
-                                     client.middle_name, client.gender, client.birth_date])
+                                     client.middle_name, client.gender, client.birth_date, client.death_date])
 
         return clients
 
-    def delete_client(self, db = DB(), table = str()):
+    def delete_client(self, db=DB(), table=str()):
         """
         Видалення клієнтів з таблиці на основі атрибутів цього клієнта.
         Використовує метод search_clients для пошуку клієнтів перед їх видаленням.
@@ -355,28 +371,42 @@ class Client:
                 conditions = {'id': client_id}
                 db.delete_from_table(table, conditions)
 
+
+#################################################################
+db1 = DB('db.db')
+
+# print(db1)
+db1.open_connection()
+db1.drop_table('clients')
+db1.create_table('clients',"last_name TEXT,first_name TEXT, middle_name TEXT, gender TEXT, birth_date DATE, death_date DATE")
+
+# my_table = 'clients'
+# cnt_rows = db1.count_rows(my_table)
+# db1.insert_into_table('clients', (cnt_rows + 1,"Пухальська2", "Марина"))
+
+
 #################################################################
 
 cl1 = Client('Пухальська','Марина','Василівна','Ж','21.10.1983')
 print(cl1)
 cl2 = Client('Анкудінова',"Дар'я",'Сергіївна','Ж','01.11.2000')
 print(cl2)
-cl3 = Client('Пухальський',"Максим",gender='Ч',birth_date='21.10.1983')
+cl3 = Client('Пухальський',"Максим",'Петрович',gender='Ч',birth_date='21.10.1983')
 print(cl3)
 
 clients_table = 'clients'
-
+print(1)
 db1.truncate_table(clients_table)
-
+print(2)
 cl1.add_one_client(db1,clients_table)
 cl2.add_one_client(db1,clients_table)
 cl3.add_one_client(db1,clients_table)
-
+print(3)
 cl1.find_clients(db1,clients_table)
 Client(gender='Ж').find_clients(db1,clients_table)
 Client(gender='Ч').find_clients(db1,clients_table)
 Client(birth_date='21.10.1983',gender='Ж').find_clients(db1,clients_table)
-
+print(4)
 
 print(db1.count_rows(clients_table))
 Client(gender='Ж').delete_client(db1,clients_table)
@@ -387,119 +417,6 @@ Client.add_client_from_csv(db1, 'clients', 'found_clients_2.csv')
 Client.add_client_from_csv(db1, 'clients', 'found_clients_1.csv')
 
 print(db1.count_rows(clients_table))
-
+print("УРА!!")
 db1.close_connection()
 #################################################################
-
-
-# # Клас для форми
-# class Form:
-#     def __init__(self):
-#         self.client = Client()
-#         self.conn = sqlite3.connect('bd.bd')
-#
-#     def open_file(self):
-#         # Відкриття всіх клієнтів з бази
-#         cursor = self.conn.cursor()
-#         cursor.execute("SELECT * FROM clients")
-#         rows = cursor.fetchall()
-#         result_message = self.client.save_to_csv(rows)  # Зберігаємо в CSV
-#         dpg.set_value(content_label, result_message)
-#
-#     def search_client(self, sender, app_data):
-#         # Отримуємо значення з полів форми
-#         self.client.last_name = dpg.get_value(last_name_input)
-#         self.client.first_name = dpg.get_value(first_name_input)
-#         self.client.middle_name = dpg.get_value(middle_name_input)
-#         self.client.gender = dpg.get_value(gender_choice)
-#         self.client.birth_date = dpg.get_value(birth_date_picker)
-#
-#         # Пошук клієнтів у базі
-#         results = self.client.search(self.conn)
-#
-#         # Збереження результатів у CSV
-#         if results:
-#             result_message = self.client.save_to_csv(results)
-#             dpg.set_value(content_label, result_message)
-#         else:
-#             dpg.set_value(content_label, "Клієнтів не знайдено.")
-#
-#     def add_client(self, sender, app_data):
-#         # Отримуємо значення з полів форми
-#         self.client.last_name = dpg.get_value(last_name_input)
-#         self.client.first_name = dpg.get_value(first_name_input)
-#         self.client.middle_name = dpg.get_value(middle_name_input)
-#         self.client.gender = dpg.get_value(gender_choice)
-#         self.client.birth_date = dpg.get_value(birth_date_picker)
-#
-#         # Додаємо клієнта до бази даних
-#         result_message = self.client.add_to_db(self.conn)
-#         dpg.set_value(content_label, result_message)  # Вивести повідомлення про успіх
-#
-#     def delete_client(self, sender, app_data):
-#         # Отримуємо значення з полів форми для пошуку
-#         self.client.last_name = dpg.get_value(last_name_input)
-#         self.client.first_name = dpg.get_value(first_name_input)
-#         self.client.middle_name = dpg.get_value(middle_name_input)
-#         self.client.gender = dpg.get_value(gender_choice)
-#         self.client.birth_date = dpg.get_value(birth_date_picker)
-#
-#         # Видаляємо клієнта з бази
-#         result_message = self.client.delete_from_db(self.conn)
-#         dpg.set_value(content_label, result_message)
-#
-#
-# # Створення основного вікна та елементів інтерфейсу
-# def create_form():
-#     form = Form()  # Створюємо об'єкт форми
-#
-#     dpg.create_context()
-#
-#     with dpg.handler_registry():
-#         with dpg.window(label="Основне вікно", width=600, height=500):
-#
-#             # Кнопки з виправленим кольором
-#             dpg.add_button(label="BD", callback=form.open_file, color=(0, 255, 0))  # Зелену
-#             dpg.add_button(label="Find", callback=form.search_client, color=(0, 0, 255))  # Синій
-#             dpg.add_button(label="Add", callback=form.add_client, color=(255, 165, 0))  # Оранжеву
-#             dpg.add_button(label="Delete", callback=form.delete_client, color=(255, 0, 0))  # Червону
-#
-#             # Поля для вводу
-#             dpg.add_text("Прізвище:")
-#             global last_name_input
-#             last_name_input = dpg.add_input_text(label="", width=200)
-#
-#             dpg.add_text("Ім'я:")
-#             global first_name_input
-#             first_name_input = dpg.add_input_text(label="", width=200)
-#
-#             dpg.add_text("По батькові:")
-#             global middle_name_input
-#             middle_name_input = dpg.add_input_text(label="", width=200)
-#
-#             # Вибір статі
-#             dpg.add_text("Стать:")
-#             global gender_choice
-#             gender_choice = dpg.add_radio_button(items=["Чоловік", "Жінка"], default_value=0)
-#
-#             # Календар для вибору дати народження
-#             dpg.add_text("Дата народження:")
-#             global birth_date_picker
-#             birth_date_picker = dpg.add_date_picker(default_value=datetime.date.today())
-#
-#             # Текст для виведення результату
-#             global content_label
-#             content_label = dpg.add_text("Вміст файлу з'явиться тут.", wrap=300, color=(255, 255, 255))
-#
-#     # Запуск основного циклу
-#     dpg.create_viewport(title="Стильний інтерфейс", width=600, height=500)
-#     dpg.setup_dearpygui()
-#     dpg.show_viewport()
-#     dpg.start_dearpygui()
-#     dpg.destroy_context()
-#
-#
-# create_form()
-
-
-
