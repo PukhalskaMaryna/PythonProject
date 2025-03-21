@@ -275,7 +275,7 @@ class Client:
     @staticmethod
     def add_client_from_csv(db: DB, table_name: str, my_file_name: str = 'import_clients.csv'):
         """
-        додаємо клієнтів із csv
+        додаємо клієнтів із csv, метод статичний, бо нема звернення до конкретного клієнта
 
         :param db: DB, підключення до бд
         :param table_name: str, назва таблиці
