@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import ttk
+# import tkinter as tk
+# from tkinter import ttk
 import sqlite3
 import csv
 import os
@@ -7,13 +7,13 @@ from datetime import datetime
 import re
 
 class DB:
-    def __init__(self, db_file_name='db.db'):
+    def __init__(self, db_file_name: str = 'db.db'):
 
         """
-        Клас для роботи з базою даних.
+        бд
 
         :param db_file_name: Str, path-like object, назва файлу бд, за замовчуванням db.db
-        :param conn: незадаваємий параметр, який в собі містить інфу, чи є конект, по замовчуванню конекта нема
+        :param conn: незадаваємий параметр, який в собі містить інфу, чи є конект, початково конект відсутній
         """
         self.db_file_name = db_file_name
         self.conn = None
@@ -23,7 +23,7 @@ class DB:
 
     def delete_db(self):
         """
-        Видалення файлу бд
+        delete бд
         https://www.geeksforgeeks.org/python-os-path-exists-method/
         """
         if os.path.exists(self.db_file_name):
@@ -31,7 +31,7 @@ class DB:
 
     def open_connection(self):
         """
-        Підключення до бд
+        open бд
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Error
         Важливо, що навіть якщо цей метод викликати на нестворену бд, тобто фактично файл з бд не існує,
@@ -46,20 +46,20 @@ class DB:
 
     def close_connection(self):
         """
-        Закриття з'єднання з бд
+        close з'єднання з бд
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.close
         """
         if self.conn:
             self.conn.close()
 
-    def execute_query(self, query, params=()):
+    def execute_query(self, query: str, params: tuple = ()):
         """
-        Метод запиту до бази даних
+        створення запиту до бд
         https://docs.python.org/3/library/sqlite3.html#cursor-objects
 
         :param query: str, SQL-запит
         :param params: tuple, параметри для запиту
-        :return: list, turtle, результат виконання запиту список кортежів
+        :return: list, tuple, результат виконання запиту список кортежів
         """
         if not self.conn:
             print("Не встановлено підключення")
@@ -76,32 +76,32 @@ class DB:
             print(f"Помилка execute_query: {sql_error}")
             return None
 
-    def create_table(self, table, fields):
+    def create_table(self, table_name: str, field_with_type: str):
         """
-        Створення таблиці з зазначеними полями.
+        створення таблички
 
-        :param table: Str, назва таблиці
-        :param fields: str, рядок з полями та їх типами
+        :param table_name: Str, назва таблички
+        :param field_with_type: str, рядок з полями та їх типами
         приклад:
         fields = 'title TEXT NOT NULL, year INTEGER NOT NULL, director TEXT'
         """
 
-        fields = "id INTEGER PRIMARY KEY AUTOINCREMENT, " + fields # id як PRIMARY KEY
-        self.execute_query(f"CREATE TABLE IF NOT EXISTS {table} ({fields})")
+        fields = "id INTEGER PRIMARY KEY AUTOINCREMENT, " + field_with_type # id як PRIMARY KEY
+        self.execute_query(f"CREATE TABLE IF NOT EXISTS {table_name} ({fields})")
 
-    def drop_table(self, table):
+    def drop_table(self, table_name: str):
         """
-        Видалені таблиці
+        дроп таблиці
 
-        :param table: Str, назва таблиці
+        :param table_name: Str, назва таблиці
         """
-        self.execute_query(f"DROP TABLE IF EXISTS {table}")
+        self.execute_query(f"DROP TABLE IF EXISTS {table_name}")
 
-    def insert_into_table(self, table, row = tuple()):
+    def insert_into_table(self, table_name: str, row = tuple()):
         """
-        Метод для вставки одного рядка
+        вставка 1 рядка
 
-        :param table: Str, назва таблиці бд, в яку додаємо дані
+        :param table_name: Str, назва таблиці бд, в яку додаємо дані
         :param row: tuple, значення для одного рядка по кожному полю, крім id
             приклад, ("Пухальська", "Марина", "Ж", "21.10.1983")
         """
@@ -110,22 +110,22 @@ class DB:
             return None
 
         try:
-            result = self.execute_query(f"SELECT MAX(id) FROM {table}")
+            result = self.execute_query(f"SELECT MAX(id) FROM {table_name}")
             next_id = 1 if not result or result[0][0] is None else result[0][0] + 1
 
-            columns_result = self.execute_query(f"PRAGMA table_info({table})") #список полів таблиці
+            columns_result = self.execute_query(f"PRAGMA table_info({table_name})") #список полів таблиці
             columns = [column[1] for column in columns_result]
 
-            query = f"INSERT INTO {table} ({", ".join(columns)}) VALUES ({", ".join("?" for _ in columns)})"
+            query = f"INSERT INTO {table_name} ({", ".join(columns)}) VALUES ({", ".join("?" for _ in columns)})"
             self.execute_query(query, (next_id, *row))
         except sqlite3.Error as sql_error:
             print(f"Помилка insert_into_table: {sql_error}")
 
-    def delete_from_table(self, table, conditions):
+    def delete_from_table(self, table_name: str, conditions: dict):
         """
-        Метод видалення
+        видалення рядка\рядків
 
-        :param table: Str, назва таблиці бд, з якої видаляємо дані
+        :param table_name: Str, назва таблиці бд, з якої видаляємо дані
         :param conditions: dict, словник з умовами видалення,
                 приклад {'id': 1} або {'last_name': 'Пухальська', 'first_name': 'Марина'}
         """
@@ -141,13 +141,13 @@ class DB:
                 params.append(value)  # ['Пухальська', 'Марина']
             condition_clause = " AND ".join(condition_strings)  # 'last_name = ? AND first_name = ?'
 
-            self.execute_query(f"DELETE FROM {table} WHERE {condition_clause}", tuple(params))
+            self.execute_query(f"DELETE FROM {table_name} WHERE {condition_clause}", tuple(params))
         except sqlite3.Error as sql_error:
             print(f"Помилка delete_from_table: {sql_error}")
 
-    def truncate_table(self, table_name):
+    def truncate_table(self, table_name: str):
         """
-        Очищення всіх даних
+        видалення всіх рядків таблиці в межах бд
 
         :param table_name: str, назва таблиці, яку потрібно очистити
         """
@@ -160,9 +160,9 @@ class DB:
         except sqlite3.Error as sql_error:
             print(f"Помилка truncate_table: {sql_error}")
 
-    def count_rows(self, table_name):
+    def count_rows(self, table_name: str):
         """
-        Підрахунок кількості рядків у таблиці.
+        к-ть рядків у таблиці
 
         :param table_name: Str, назва таблиці в базі даних
         :return: кількість рядків в таблиці
@@ -180,27 +180,54 @@ class DB:
 
 
 # метод для обробки дат
-def process_date(date_str):
+def process_date(date_str: str):
     """
-    Обробка дати в форматі %d.%m.%Y або %Y-%m-%d.
+    обробка дати, приведення до потрібного формату
 
     :param date_str: Str, дата для обробки
-    :return: str або None, дата у форматі %d.%m.%Y або None, якщо дата не вірна
+    :return: str формату "dd.mm.yyyy" або None
     """
 
     if re.match(r'^\d{2}\.\d{2}\.\d{4}$', date_str):
         return date_str
+    # "yyyy-mm-dd"
     try:
-        # Спробуємо перетворити дату з формату %Y-%m-%d в %d.%m.%Y
         return datetime.strptime(date_str, "%Y-%m-%d").strftime("%d.%m.%Y")
     except ValueError:
-        return None
+        pass
+    # "dd mm yyyy"
+    if re.match(r'^\d{1,2} \d{1,2} \d{4}$', date_str):
+        try:
+            return datetime.strptime(date_str, "%d %m %Y").strftime("%d.%m.%Y")
+        except ValueError:
+            return None
+    # "dd/mm/yyyy"
+    if re.match(r'^\d{1,2}/\d{1,2}/\d{4}$', date_str):
+        try:
+            return datetime.strptime(date_str, "%d/%m/%Y").strftime("%d.%m.%Y")
+        except ValueError:
+            return None
+    # "d-m-yyyy"
+    if re.match(r'^\d{1,2}-\d{1,2}-\d{4}$', date_str):
+        try:
+            return datetime.strptime(date_str, "%d-%m-%Y").strftime("%d.%m.%Y")
+        except ValueError:
+            return None
+
+    return None
 
 
 class Client:
-    def __init__(self, last_name = '', first_name = '', middle_name = '', gender = '', birth_date = None, death_date = None):
+    def __init__(self
+                 , last_name: str = ''
+                 , first_name: str = ''
+                 , middle_name: str = ''
+                 , gender: str = ''
+                 , birth_date: datetime = None
+                 , death_date: datetime = None):
+
         """
-        Ініціалізація об'єкта клієнта.
+        клієнт
 
         :param last_name: Str, прізвище клієнта
         :param first_name: str, ім'я клієнта
@@ -219,12 +246,12 @@ class Client:
     def __str__(self):
         return f"{self.last_name} {self.first_name} {self.middle_name} - {self.gender} - {self.birth_date} - {self.death_date}"
 
-    def add_one_client(self, db=DB(), table=str()):
+    def add_one_client(self, db: DB, table_name: str):
         """
-        Додавання одного клієнта.
+        додаємо 1 клієнта
 
         :param db: DB, підключення до бази даних
-        :param table: str, назва таблиці
+        :param table_name: str, назва таблиці
         :return: None
         """
         # ДН
@@ -243,15 +270,15 @@ class Client:
             correct_death_date = None
 
         row = (self.last_name, self.first_name, self.middle_name, self.gender, correct_birth_date, correct_death_date)
-        db.insert_into_table(table, row)
+        db.insert_into_table(table_name, row)
 
     @staticmethod
-    def add_client_from_csv(db=DB(), table=str(), my_file_name='import_clients.csv'):
+    def add_client_from_csv(db: DB, table_name: str, my_file_name: str = 'import_clients.csv'):
         """
-        Додавання клієнтів із csv.
+        додаємо клієнтів із csv
 
-        :param db: DB, підключення до бази даних
-        :param table: str, назва таблиці
+        :param db: DB, підключення до бд
+        :param table_name: str, назва таблиці
         :param my_file_name: назва csv для імпорту, за замовчуванням 'import_clients.csv'
         :return: None
         """
@@ -281,11 +308,11 @@ class Client:
                     death_date = None
 
                 client = Client(row["last_name"], row["first_name"], row["middle_name"], row["gender"], birth_date, death_date)
-                client.add_one_client(db, table)
+                client.add_one_client(db, table_name)
 
-    def find_clients(self, db=DB(), table=str(), export_to_csv=True):
+    def find_clients(self, db: DB, table: str, export_to_csv: bool = True):
         """
-        Пошук клієнтів.
+        пошук клієнта
 
         :param db: DB, підключення до бази даних
         :param table: str, назва таблиці
@@ -319,7 +346,7 @@ class Client:
                 params.append(death_date)
 
         if not conditions:
-            print("Вкажіть хоч 1 параметр для пошуку")
+            print("Вкажіть хоча б 1 параметр для пошуку")
             return []
 
         condition_clause = " AND ".join(conditions)
@@ -356,20 +383,20 @@ class Client:
 
         return clients
 
-    def delete_client(self, db=DB(), table=str()):
+    def delete_client(self, db: DB, table_name: str):
         """
-        Видалення клієнтів з таблиці на основі атрибутів цього клієнта.
-        Використовує метод search_clients для пошуку клієнтів перед їх видаленням.
+        видалення клієнтів
+        використовує метод find_clients для пошуку клієнтів перед їх видаленням
 
-        :param db: DB, підключення до бази даних
-        :param table: str, назва таблиці
+        :param db: DB, підключення до бд
+        :param table_name: str, назва таблиці
         """
-        clients_to_delete = self.find_clients(db, table, export_to_csv=False)
+        clients_to_delete = self.find_clients(db, table_name, export_to_csv=False)
 
         if clients_to_delete:
             for client_id, client in clients_to_delete.items():
                 conditions = {'id': client_id}
-                db.delete_from_table(table, conditions)
+                db.delete_from_table(table_name, conditions)
 
 
 #################################################################
