@@ -257,14 +257,14 @@ class Client:
         # ДН
         correct_birth_date = process_date(str(self.birth_date))
         if not correct_birth_date:
-            print(f"Помилка: невірний формат дати народження для клієнта {self.last_name}. Пропускаємо.")
+            print(f"Помилка: невірний формат ДН клієнта {self.last_name}, пропускаємо")
             return
 
         # ДС
         if self.death_date:
             correct_death_date = process_date(str(self.death_date))
             if correct_death_date is None:
-                print(f"Помилка: невірний формат дати смерті для клієнта {self.last_name}. Пропускаємо.")
+                print(f"Помилка: невірний формат ДС клієнта {self.last_name}, пропускаємо")
                 return
         else:
             correct_death_date = None
