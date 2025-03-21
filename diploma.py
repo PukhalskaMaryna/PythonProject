@@ -223,8 +223,8 @@ class Client:
                  , first_name: str = ''
                  , middle_name: str = ''
                  , gender: str = ''
-                 , birth_date: datetime = None
-                 , death_date: datetime = None):
+                 , birth_date: str = ''
+                 , death_date: str = ''):
 
         """
         клієнт
@@ -250,19 +250,19 @@ class Client:
         """
         додаємо 1 клієнта
 
-        :param db: DB, підключення до бази даних
+        :param db: DB, підключення до бд
         :param table_name: str, назва таблиці
         :return: None
         """
         # ДН
-        correct_birth_date = process_date(self.birth_date)
+        correct_birth_date = process_date(str(self.birth_date))
         if not correct_birth_date:
             print(f"Помилка: невірний формат дати народження для клієнта {self.last_name}. Пропускаємо.")
             return
 
         # ДС
         if self.death_date:
-            correct_death_date = process_date(self.death_date)
+            correct_death_date = process_date(str(self.death_date))
             if correct_death_date is None:
                 print(f"Помилка: невірний формат дати смерті для клієнта {self.last_name}. Пропускаємо.")
                 return
@@ -292,15 +292,15 @@ class Client:
                     print("Невірний формат файлу")
                     continue
 
-                # Обробка дати народження
-                birth_date = process_date(row['birth_date'])
+                # ДН
+                birth_date = process_date(str(row['birth_date']))
                 if birth_date is None:
                     print(f"Помилка: невірний формат дати для клієнта {row['id']}. Пропускаємо.")
                     continue
 
-                # Обробка дати смерті (якщо є)
+                # ДС
                 if 'death_date' in row and row['death_date']:
-                    death_date = process_date(row['death_date'])
+                    death_date = process_date(str(row['death_date']))
                     if death_date is None:
                         print(f"Помилка: невірний формат дати смерті для клієнта {row['id']}. Пропускаємо.")
                         continue
