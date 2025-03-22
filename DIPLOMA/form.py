@@ -35,10 +35,6 @@ class Form:
         self.center_window(600, 400)  # Збільшили висоту вікна
         self.window.config(bg=self.window_bg_color)
 
-        # панель для кнопок у верхній частині
-        # self.top_frame = tk.Frame(self.window, bg="lightgray")
-        # self.top_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=5)
-
         # лейблики та поля вводу
         self.client_count_label = tk.Label(self.window, text="Кількість клієнтів в бд:", fg=self.label_color,
                                            font=self.label_font, bg=self.window_bg_color, anchor="e")
@@ -179,7 +175,7 @@ class Form:
         return self.db.count_rows(self.table_name)
 
     def update_client_count(self):
-        """Оновлює кількість клієнтів в базі даних та відображає на формі"""
+        """оновлення к-ті в бд"""
         client_count = self.count_rows()
         self.client_count_value_label.config(text=str(client_count))
 
@@ -219,7 +215,9 @@ class Form:
         middle_name = self.middle_name_entry.get()
         gender = self.gender_combobox.get()
         birth_date = self.birth_date_entry.get()
+        birth_date = process_date(birth_date)
         death_date = self.death_date_entry.get()
+        death_date = process_date(death_date)
 
         self.client = Client(last_name, first_name, middle_name, gender, birth_date, death_date)
 
@@ -471,8 +469,8 @@ class Form:
         self.middle_name_entry.delete(0, tk.END)
         self.birth_date_entry.delete(0, tk.END)
         self.death_date_entry.delete(0, tk.END)
-        self.age_value_label.config(text="0")  # Очищаємо вік, якщо потрібно
-        self.gender_combobox.set("")  # Встановлюємо значення за замовчуванням для комбобоксу
+        self.age_value_label.config(text="0")
+        self.gender_combobox.set("")
 
     @staticmethod
     def create_smiley_window():
