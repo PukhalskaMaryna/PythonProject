@@ -5,6 +5,8 @@ import csv
 import os
 from datetime import datetime
 import re
+import random
+from PIL import Image, ImageDraw, ImageTk
 
 class DB:
     def __init__(self, db_file_name: str = 'db.db'):
@@ -139,19 +141,23 @@ class DB:
         query = f"DELETE FROM {table_name}"
         self.execute_query(query)
 
-    def count_rows(self, table_name: str):
+    def count_rows(self, table_name):
         """
         к-ть рядків у таблиці
 
         :param table_name: Str, назва таблиці в базі даних
         :return: кількість рядків в таблиці
         """
+        if not self.conn:
+            self.open_connection()
+
         query = f"SELECT COUNT(*) FROM {table_name}"
         result = self.execute_query(query)
         if result:
-            return result[0][0]
-        return 0
-
+            count =  result[0][0]
+            return count
+        else:
+            return 0
 
 # метод для обробки дат
 def process_date(date_str: str):
@@ -218,7 +224,7 @@ class Client:
         self.death_date = death_date
 
     def __str__(self):
-        return f"{self.last_name} {self.first_name} {self.middle_name} - {self.gender} - {self.birth_date} - {self.death_date}"
+        return f"{self.last_name} {self.first_name} {self.middle_name} - {self.gender} - ДН {self.birth_date} - {'ДС' if self.death_date else ''} {self.death_date if self.death_date else 'живенький клієнт'}"
 
     def add_one_client(self, db: DB, table_name: str):
         """
@@ -398,23 +404,18 @@ db1.open_connection()
 db1.drop_table('clients')
 db1.create_table('clients',"last_name TEXT,first_name TEXT, middle_name TEXT, gender TEXT, birth_date DATE, death_date DATE")
 
-# my_table = 'clients'
-# cnt_rows = db1.count_rows(my_table)
-# db1.insert_into_table('clients', (cnt_rows + 1,"Пухальська2", "Марина"))
+clients_table = 'clients'
+print(db1.count_rows(clients_table))
 
-
+db1.truncate_table(clients_table)
 #################################################################
 
 cl1 = Client('Пухальська','Марина','Василівна','жінка','21.10.1983')
 print(cl1)
 cl2 = Client('Анкудінова',"Дар'я",'Сергіївна','жінка','25.04.1995')
 print(cl2)
-cl3 = Client('Пухальський',"Максим",'Петрович',gender='чоловік',birth_date='21.10.1983')
+cl3 = Client('Іванов',"Іван",'Іванович',gender='чоловік',birth_date='20.01.1933',death_date = '20.01.1989')
 print(cl3)
-
-clients_table = 'clients'
-
-db1.truncate_table(clients_table)
 
 cl1.add_one_client(db1,clients_table)
 cl2.add_one_client(db1,clients_table)
@@ -425,7 +426,7 @@ cl3.add_one_client(db1,clients_table)
 # Client(gender='Ч').find_clients(db1,clients_table)
 # Client(birth_date='21.10.1983',gender='Ж').find_clients(db1,clients_table)
 
-# print(db1.count_rows(clients_table))
+print(db1.count_rows(clients_table))
 # Client(gender='Ж').delete_client(db1,clients_table)
 # print(db1.count_rows(clients_table))
 
@@ -465,50 +466,68 @@ class Form:
         self.center_window(600, 400)  # Збільшили висоту вікна
         self.window.config(bg=self.window_bg_color)
 
-        # лейбли та поля вводу
+        # панель для кнопок у верхній частині
+        self.top_frame = tk.Frame(self.window, bg="lightgray")
+        self.top_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=5)
+
+        # лейблики та поля вводу
         self.client_count_label = tk.Label(self.window, text="Кількість клієнтів в бд:", fg=self.label_color,
                                            font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.client_count_label.grid(row=0, column=0, pady=5, sticky="e")
+        self.client_count_label.grid(row=1, column=0, pady=5, sticky="e")
 
         self.client_count_value_label = tk.Label(self.window, text="0", fg=self.label_color, font=self.label_font,
                                                  bg=self.window_bg_color)
-        self.client_count_value_label.grid(row=0, column=1, pady=5, sticky="w")
+        self.client_count_value_label.grid(row=1, column=1, pady=5, sticky="w")
 
-        self.last_name_label = tk.Label(self.window, text="Прізвище:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.last_name_label.grid(row=1, column=0, pady=5, sticky="e")
+        self.last_name_label = tk.Label(self.window, text="Прізвище:", fg=self.label_color, font=self.label_font,
+                                        bg=self.window_bg_color, anchor="e")
+        self.last_name_label.grid(row=2, column=0, pady=5, sticky="e")
         self.last_name_entry = tk.Entry(self.window, width=40)
-        self.last_name_entry.grid(row=1, column=1, pady=5, sticky="ew")
+        self.last_name_entry.grid(row=2, column=1, pady=5, sticky="ew")
 
-        self.first_name_label = tk.Label(self.window, text="Ім'я:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.first_name_label.grid(row=2, column=0, pady=5, sticky="e")
+        self.first_name_label = tk.Label(self.window, text="Ім'я:", fg=self.label_color, font=self.label_font,
+                                         bg=self.window_bg_color, anchor="e")
+        self.first_name_label.grid(row=3, column=0, pady=5, sticky="e")
         self.first_name_entry = tk.Entry(self.window, width=40)
-        self.first_name_entry.grid(row=2, column=1, pady=5, sticky="ew")
+        self.first_name_entry.grid(row=3, column=1, pady=5, sticky="ew")
 
-        self.middle_name_label = tk.Label(self.window, text="По батькові:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.middle_name_label.grid(row=3, column=0, pady=5, sticky="e")
+        self.middle_name_label = tk.Label(self.window, text="По батькові:", fg=self.label_color, font=self.label_font,
+                                          bg=self.window_bg_color, anchor="e")
+        self.middle_name_label.grid(row=4, column=0, pady=5, sticky="e")
         self.middle_name_entry = tk.Entry(self.window, width=40)
-        self.middle_name_entry.grid(row=3, column=1, pady=5, sticky="ew")
+        self.middle_name_entry.grid(row=4, column=1, pady=5, sticky="ew")
 
-        self.gender_label = tk.Label(self.window, text="Стать:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.gender_label.grid(row=4, column=0, pady=5, sticky="e")
+        self.gender_label = tk.Label(self.window, text="Стать:", fg=self.label_color, font=self.label_font,
+                                     bg=self.window_bg_color, anchor="e")
+        self.gender_label.grid(row=5, column=0, pady=5, sticky="e")
         self.gender_combobox = ttk.Combobox(self.window, values=["чоловік", "жінка"], width=40, state="readonly")
         self.gender_combobox.set("чоловік")  # Завжди встановлюється значення за замовчуванням
-        self.gender_combobox.grid(row=4, column=1, pady=5, sticky="ew")
+        self.gender_combobox.grid(row=5, column=1, pady=5, sticky="ew")
 
-        self.birth_date_label = tk.Label(self.window, text="Дата народження:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.birth_date_label.grid(row=5, column=0, pady=5, sticky="e")
+        self.birth_date_label = tk.Label(self.window, text="Дата народження:", fg=self.label_color,
+                                         font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.birth_date_label.grid(row=6, column=0, pady=5, sticky="e")
         self.birth_date_entry = tk.Entry(self.window, width=10)
-        self.birth_date_entry.grid(row=5, column=1, pady=5, sticky="ew")
+        self.birth_date_entry.grid(row=6, column=1, pady=5, sticky="ew")
 
-        self.death_date_label = tk.Label(self.window, text="Дата смерті:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.death_date_label.grid(row=6, column=0, pady=5, sticky="e")
+        # При зміні дати народження автоматично оновлюємо вік
+        self.birth_date_entry.bind("<KeyRelease>", self.calculate_age)
+
+        self.death_date_label = tk.Label(self.window, text="Дата смерті:", fg=self.label_color, font=self.label_font,
+                                         bg=self.window_bg_color, anchor="e")
+        self.death_date_label.grid(row=7, column=0, pady=5, sticky="e")
         self.death_date_entry = tk.Entry(self.window, width=10)
-        self.death_date_entry.grid(row=6, column=1, pady=5, sticky="ew")
+        self.death_date_entry.grid(row=7, column=1, pady=5, sticky="ew")
 
-        self.age_label = tk.Label(self.window, text="Вік:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
-        self.age_label.grid(row=7, column=2, pady=5, sticky="e")
-        self.age_value_label = tk.Label(self.window, text="0", fg=self.label_color, font=self.label_font, bg=self.window_bg_color)
-        self.age_value_label.grid(row=7, column=3, pady=5, sticky="w")
+        # При зміні дати смерті також оновлюємо вік
+        self.death_date_entry.bind("<KeyRelease>", self.calculate_age)
+
+        self.age_label = tk.Label(self.window, text="Вік:", fg=self.label_color, font=self.label_font,
+                                  bg=self.window_bg_color, anchor="e")
+        self.age_label.grid(row=8, column=2, pady=5, sticky="e")
+        self.age_value_label = tk.Label(self.window, text="0", fg=self.label_color, font=self.label_font,
+                                        bg=self.window_bg_color)
+        self.age_value_label.grid(row=8, column=3, pady=5, sticky="w")
 
         # Переміщаємо import_option напроти кнопки "Створити" (рядок 9)
         self.import_option = ttk.Combobox(self.window, values=["з форми", "з csv"], width=37, justify="center")
@@ -520,8 +539,6 @@ class Form:
                                        bg="white", activebackground="lightgray", relief="flat", bd=2,
                                        highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
         self.submit_button.grid(row=9, column=0, pady=5, padx=5, sticky="ew")
-
-        # Розміщуємо кнопку "Знайти" під кнопкою "Створити" та кнопку "Видалити" справа від "Знайти"
         self.search_button = tk.Button(self.window, text="Знайти", command=self.search_client, width=20,
                                        bg="white", activebackground="lightgray", relief="flat", bd=2,
                                        highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
@@ -531,11 +548,57 @@ class Form:
                                        bg="white", activebackground="lightgray", relief="flat", bd=2,
                                        highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
         self.delete_button.grid(row=10, column=1, pady=5, padx=5, sticky="ew")
+        # просто for fun :)
+        self.auto_fun_button = tk.Button(self.window, text="Отримати умішку", width=15,
+                                          bg="#FFFFCC", activebackground="#FFFFCC", relief="flat", bd=2,
+                                          highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.auto_fun_button.grid(row=0, column=0, padx=5)
+        # рандомне автозаповнення
+        self.auto_fill_button = tk.Button(self.window, text="Автозаповнення", command=self.auto_fill, width=15,
+                                          bg="white", activebackground="lightgray", relief="flat", bd=2,
+                                          highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.auto_fill_button.grid(row=0, column=1, padx=5)
+        # чистка форми
+        self.clear_button = tk.Button(self.window, text="Очистка", command=self.clear_entries, width=15,
+                                          bg="white", activebackground="lightgray", relief="flat", bd=2,
+                                          highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.clear_button.grid(row=0, column=2, padx=5, pady=5)
 
         # при закритті форми закриваємо коннекшн
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
 
+        self.update_client_count()
+
         self.window.mainloop()
+
+    def auto_fill(self):
+        """автозаповнення"""
+        last_names = ["Іваненко", "Петренко", "Коваленко", "Сидоренко", "Мельник"]
+        first_names = ["Іван", "Олександр", "Марія", "Наталія", "Андрій"]
+        middle_names = ["Іванович", "Олександрович", "Миколаївна", "Ігорівна", "Петрівна"]
+        self.last_name_entry.delete(0, tk.END)
+        self.last_name_entry.insert(0, random.choice(last_names))
+        self.first_name_entry.delete(0, tk.END)
+        self.first_name_entry.insert(0, random.choice(first_names))
+        self.middle_name_entry.delete(0, tk.END)
+        self.middle_name_entry.insert(0, random.choice(middle_names))
+        gender = random.choice(["чоловік", "жінка"])
+        self.gender_combobox.set(gender)
+        birth_dates = [
+            "15.03.1985", "01.02.1990", "25.08.1975", "10.11.1980", "30.12.1970",
+            "22.04.1965", "17.06.1958", "05.07.1995"
+        ]
+        death_dates = [
+            "25.12.2020", "15.06.2022", "10.03.2019", "30.01.2021", "05.09.2023",
+            "18.08.2022", "01.01.2018", "12.07.2021"
+        ]
+        birth_date = random.choice(birth_dates)
+        self.birth_date_entry.delete(0, tk.END)
+        self.birth_date_entry.insert(0, birth_date)
+        death_date = random.choice(death_dates)
+        self.death_date_entry.delete(0, tk.END)
+        self.death_date_entry.insert(0, death_date)
+        self.calculate_age() # перерахунок віку
 
     def on_close(self):
         """при закритті вікна закривається і з'єднання до бд"""
@@ -544,8 +607,7 @@ class Form:
 
     def count_rows(self):
         """кількості клієнтів в бд"""
-        db = DB(self.db_file)
-        return db.count_rows(self.table_name)  # Повертаємо результат з класу БД
+        return self.db.count_rows(self.table_name)
 
     def update_client_count(self):
         """Оновлює кількість клієнтів в базі даних та відображає на формі"""
@@ -630,14 +692,21 @@ class Form:
 
             # запам'ятовуємо клієнта
             self.remember_client()
-
+            print(self.client)
             # додаємо клієнта у бд
-            self.client.add_one_client(self.db_file, self.table_name)
+            self.client.add_one_client(self.db, self.table_name)
 
             # повідомленням про успішне створення клієнта
             success_window = tk.Toplevel(self.window)
             success_window.title("Новий клієнт")
             success_window.geometry("300x150")
+            window_width = 300
+            window_height = 150
+            screen_width = self.window.winfo_screenwidth()
+            screen_height = self.window.winfo_screenheight()
+            position_top = int(screen_height / 2 - window_height / 2)
+            position_right = int(screen_width / 2 - window_width / 2)
+            success_window.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
             success_label = tk.Label(success_window, text="Успішно створено клієнта!", font=self.label_font,
                                      fg=self.label_color, bg="lightblue")
             success_label.pack(padx=20, pady=20)
@@ -645,7 +714,8 @@ class Form:
                                      bg="white", activebackground="lightgray", relief="flat", bd=2,
                                      highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
             close_button.pack(pady=10)
-
+            self.update_client_count()
+            self.clear_entries()
 
         # якщо вибрано "з csv"
         elif self.import_option.get() == "з csv":
@@ -655,6 +725,30 @@ class Form:
                 self.client.add_client_from_csv(self.db_file, self.table_name,
                                                 my_file_name)  # викликаємо метод для імпорту
 
+                # повідомленням про успішний імпорт
+                success_window2 = tk.Toplevel(self.window)
+                success_window2.title("Імпорт з CSV")
+                success_window2.geometry("300x150")
+
+                # Для того, щоб вікно було по центру екрана:
+                window_width2 = 300
+                window_height2 = 150
+                screen_width2 = self.window.winfo_screenwidth()
+                screen_height2 = self.window.winfo_screenheight()
+                position_top2 = int(screen_height2 / 2 - window_height2 / 2)
+                position_right2 = int(screen_width2 / 2 - window_width2 / 2)
+                success_window2.geometry(f"{window_width2}x{window_height2}+{position_right2}+{position_top2}")
+
+                success_label2 = tk.Label(success_window2, text="Успішно імпортовано клієнтів!", font=self.label_font,
+                                          fg=self.label_color, bg="lightblue")
+                success_label2.pack(padx=20, pady=20)
+                close_button2 = tk.Button(success_window2, text="Закрити", command=success_window2.destroy, width=15,
+                                          bg="white", activebackground="lightgray", relief="flat", bd=2,
+                                          highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+                close_button2.pack(pady=10)
+                self.clear_entries()
+                self.update_client_count()
+
             # створюємо нове вікно для введення назви файлу
             file_window = tk.Toplevel(self.window)
             file_window.title("Вибір файлу для імпорту")
@@ -662,7 +756,7 @@ class Form:
 
             # лейбл для поля вводу назви файлу
             file_label = tk.Label(file_window, text="Введіть назву файлу:", font=self.label_font,
-                                                fg=self.label_color,bg="lightblue")
+                                  fg=self.label_color, bg="lightblue")
             file_label.pack(padx=10, pady=10)
 
             # поле вводу для назви файлу, за замовчуванням "import_clients.csv"
@@ -672,8 +766,8 @@ class Form:
 
             # кнопка для підтвердження імпорту
             import_button = tk.Button(file_window, text="Імпортувати", command=import_from_csv,
-                                      width=20, bg="white",activebackground="lightgray",
-                                      relief="flat", bd=2,highlightthickness=0,
+                                      width=20, bg="white", activebackground="lightgray",
+                                      relief="flat", bd=2, highlightthickness=0,
                                       font=("Arial", 10, "bold"), pady=5)
             import_button.pack(pady=10)
 
@@ -681,21 +775,21 @@ class Form:
         # Спочатку запам'ятовуємо дані клієнта з форми
         self.remember_client()
 
-        # Шукаємо клієнта в базі даних за допомогою методу find_clients
+        # метод find_clients
         clients = self.client.find_clients(self.db_file, self.table_name, export_to_csv=False)
+
+        # вікно для результатів пошуку
+        result_window = tk.Toplevel(self.window)
+        result_window.title("Знайдені клієнти")
+        result_window.geometry("500x400")
+        result_text = tk.Text(result_window, width=60, height=15, wrap=tk.WORD, bg="lightblue",
+                              fg="#4B8BD4", font=("Arial", 10))
+        result_text.pack(padx=10, pady=10)
+        close_button = tk.Button(result_window, text="Закрити", command=result_window.destroy)
+        close_button.pack(pady=5)
 
         # клієнтів знайдено
         if clients:
-            # Створюємо нове вікно для результатів пошуку
-            result_window = tk.Toplevel(self.window)
-            result_window.title("Знайдені клієнти")
-            result_window.geometry("500x400")
-
-            # Створюємо Text widget для відображення всіх клієнтів
-            result_text = tk.Text(result_window, width=60, height=15, wrap=tk.WORD, bg="lightblue",
-                                                 fg="#4B8BD4",font=("Arial", 10))
-            result_text.pack(padx=10, pady=10)
-
             # додаємо інформацію в текстове поле
             for client_id, client in clients.items():
                 # Обчислюємо вік клієнта
@@ -709,23 +803,30 @@ class Form:
                               f"Дата смерті: {client.death_date}\n\n"
 
                 result_text.insert(tk.END, client_text)
-
-            # Додаємо кнопку для закриття вікна
-            close_button = tk.Button(result_window, text="Закрити", command=result_window.destroy)
-            close_button.pack(pady=5)
-
+                self.clear_entries()
         else:
-            print("Клієнт не знайдений!")
+            result_text.insert(tk.END, 'Не знайдено!')
 
     def delete_client(self):
         self.remember_client()
         clients = self.client.find_clients(self.db_file, self.table_name)
 
+        # вікно для результатів пошуку
+        result_window = tk.Toplevel(self.window)
+        result_window.title("Видалені клієнти")
+        result_window.geometry("500x400")
+        result_text = tk.Text(result_window, width=60, height=15, wrap=tk.WORD, bg="lightblue",
+                              fg="#4B8BD4", font=("Arial", 10))
+        result_text.pack(padx=10, pady=10)
+        close_button = tk.Button(result_window, text="Закрити", command=result_window.destroy)
+        close_button.pack(pady=5)
+
         if clients:
             self.client.delete_one_client(self.db_file, self.table_name)
-            print(f"Клієнта {self.client.last_name} {self.client.first_name} видалено!")
+            result_text.insert(tk.END, f"Клієнта {self.client.last_name} {self.client.first_name} видалено")
+            self.clear_entries()
         else:
-            print("Клієнта не знайдено!")
+            result_text.insert(tk.END, f"Клієнта для видалення не знайдено!")
 
     def center_window(self, width, height):
         """центрує вікно на екрані"""
@@ -734,6 +835,58 @@ class Form:
         position_top = int(screen_height / 2 - height / 2)
         position_right = int(screen_width / 2 - width / 2)
         self.window.geometry(f'{width}x{height}+{position_right}+{position_top}')
+
+    def clear_entries(self):
+        """чистка форми"""
+        self.last_name_entry.delete(0, tk.END)
+        self.first_name_entry.delete(0, tk.END)
+        self.middle_name_entry.delete(0, tk.END)
+        self.birth_date_entry.delete(0, tk.END)
+        self.death_date_entry.delete(0, tk.END)
+        self.age_value_label.config(text="0")  # Очищаємо вік, якщо потрібно
+        self.gender_combobox.set("чоловік")  # Встановлюємо значення за замовчуванням для комбобоксу
+
+    @staticmethod
+    def create_smiley_window():
+        # Створюємо зображення для смайлика
+        image = Image.new("RGB", (300, 300), "white")
+        draw = ImageDraw.Draw(image)
+
+        # Малюємо круг для обличчя смайлика
+        draw.ellipse((50, 50, 250, 250), fill="yellow", outline="black", width=5)
+
+        # Малюємо очі
+        draw.ellipse((100, 100, 140, 140), fill="black")  # Ліве око
+        draw.ellipse((160, 100, 200, 140), fill="black")  # Праве око
+
+        # Малюємо посмішку (використовуємо arc для півкола)
+        draw.arc((100, 150, 200, 230), start=0, end=180, fill="black", width=5)
+
+        # Малюємо рожеві щічки
+        draw.ellipse((70, 170, 110, 210), fill="pink")  # Ліва щічка
+        draw.ellipse((190, 170, 230, 210), fill="pink")  # Права щічка
+
+        # Потрібно конвертувати Image в формат, який Tkinter може відображати
+        tk_image = ImageTk.PhotoImage(image)
+
+        # Створюємо нове вікно для відображення смайлика
+        smiley_window = tk.Toplevel()
+        smiley_window.title("Смайлик")
+        smiley_window.geometry("300x300")
+
+        # Додаємо смайлик до вікна
+        label = tk.Label(smiley_window, image=tk_image)
+        label.pack()
+
+        # Додаємо метод закриття вікна при натисканні кнопки
+        def close_window():
+            smiley_window.destroy()
+
+        close_button = tk.Button(smiley_window, text="Закрити", command=close_window)
+        close_button.pack(pady=10)
+
+        # Необхідно зберігати об'єкт ImageTk, інакше він не буде відображатися
+        label.image = tk_image
 
 
 # Запуск програми
