@@ -467,8 +467,8 @@ class Form:
         self.window.config(bg=self.window_bg_color)
 
         # панель для кнопок у верхній частині
-        self.top_frame = tk.Frame(self.window, bg="lightgray")
-        self.top_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=5)
+        # self.top_frame = tk.Frame(self.window, bg="lightgray")
+        # self.top_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=5)
 
         # лейблики та поля вводу
         self.client_count_label = tk.Label(self.window, text="Кількість клієнтів в бд:", fg=self.label_color,
@@ -549,9 +549,9 @@ class Form:
                                        highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
         self.delete_button.grid(row=10, column=1, pady=5, padx=5, sticky="ew")
         # просто for fun :)
-        self.auto_fun_button = tk.Button(self.window, text="Отримати умішку", width=15,
-                                          bg="#FFFFCC", activebackground="#FFFFCC", relief="flat", bd=2,
-                                          highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.auto_fun_button = tk.Button(self.window, text="Отримати умішку", width=15, command=self.create_smiley_window,
+                                         bg="#FFFFCC", activebackground="#FFFFCC", relief="flat", bd=2,
+                                         highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
         self.auto_fun_button.grid(row=0, column=0, padx=5)
         # рандомне автозаповнення
         self.auto_fill_button = tk.Button(self.window, text="Автозаповнення", command=self.auto_fill, width=15,
@@ -776,7 +776,7 @@ class Form:
         self.remember_client()
 
         # метод find_clients
-        clients = self.client.find_clients(self.db_file, self.table_name, export_to_csv=False)
+        clients = self.client.find_clients(self.db, self.table_name, export_to_csv=False)
 
         # вікно для результатів пошуку
         result_window = tk.Toplevel(self.window)
@@ -809,7 +809,7 @@ class Form:
 
     def delete_client(self):
         self.remember_client()
-        clients = self.client.find_clients(self.db_file, self.table_name)
+        clients = self.client.find_clients(self.db, self.table_name)
 
         # вікно для результатів пошуку
         result_window = tk.Toplevel(self.window)
