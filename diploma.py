@@ -8,6 +8,7 @@ import re
 import random
 from PIL import Image, ImageDraw, ImageTk
 
+
 class DB:
     def __init__(self, db_file_name: str = 'db.db'):
 
