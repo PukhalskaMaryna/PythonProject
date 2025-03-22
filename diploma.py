@@ -62,8 +62,7 @@ class DB:
         :return: list, tuple, результат виконання запиту список кортежів
         """
         if not self.conn:
-            print("Не встановлено підключення")
-            return None
+            self.open_connection()
 
         try:
             my_cursor = self.conn.cursor()  # курсор
@@ -86,8 +85,9 @@ class DB:
         fields = 'title TEXT NOT NULL, year INTEGER NOT NULL, director TEXT'
         """
 
-        fields = "id INTEGER PRIMARY KEY AUTOINCREMENT, " + field_with_type # id як PRIMARY KEY
-        self.execute_query(f"CREATE TABLE IF NOT EXISTS {table_name} ({fields})")
+        fields = "id INTEGER PRIMARY KEY AUTOINCREMENT, " + field_with_type
+        query = f"CREATE TABLE IF NOT EXISTS {table_name} ({fields})"
+        self.execute_query(query)
 
     def drop_table(self, table_name: str):
         """
@@ -95,7 +95,8 @@ class DB:
 
         :param table_name: Str, назва таблиці
         """
-        self.execute_query(f"DROP TABLE IF EXISTS {table_name}")
+        query = f"DROP TABLE IF EXISTS {table_name}"
+        self.execute_query(query)
 
     def insert_into_table(self, table_name: str, row = tuple()):
         """
@@ -105,21 +106,14 @@ class DB:
         :param row: tuple, значення для одного рядка по кожному полю, крім id
             приклад, ("Пухальська", "Марина", "Ж", "21.10.1983")
         """
-        if not self.conn:
-            print("Не встановлено підключення")
-            return None
+        result = self.execute_query(f"SELECT MAX(id) FROM {table_name}")
+        next_id = 1 if not result or result[0][0] is None else result[0][0] + 1
 
-        try:
-            result = self.execute_query(f"SELECT MAX(id) FROM {table_name}")
-            next_id = 1 if not result or result[0][0] is None else result[0][0] + 1
+        columns_result = self.execute_query(f"PRAGMA table_info({table_name})")
+        columns = [column[1] for column in columns_result]
 
-            columns_result = self.execute_query(f"PRAGMA table_info({table_name})") #список полів таблиці
-            columns = [column[1] for column in columns_result]
-
-            query = f"INSERT INTO {table_name} ({", ".join(columns)}) VALUES ({", ".join("?" for _ in columns)})"
-            self.execute_query(query, (next_id, *row))
-        except sqlite3.Error as sql_error:
-            print(f"Помилка insert_into_table: {sql_error}")
+        query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})"
+        self.execute_query(query, (next_id, *row))
 
     def delete_from_table(self, table_name: str, conditions: dict):
         """
@@ -129,21 +123,12 @@ class DB:
         :param conditions: dict, словник з умовами видалення,
                 приклад {'id': 1} або {'last_name': 'Пухальська', 'first_name': 'Марина'}
         """
-        if not self.conn:
-            print("Не встановлено підключення")
-            return None
+        condition_strings = [f"{column} = ?" for column in conditions]
+        params = list(conditions.values())
+        condition_clause = " AND ".join(condition_strings)
 
-        try:
-            condition_strings = []
-            params = []
-            for column, value in conditions.items():
-                condition_strings.append(f"{column} = ?")  # ['last_name = ?', 'first_name = ?']
-                params.append(value)  # ['Пухальська', 'Марина']
-            condition_clause = " AND ".join(condition_strings)  # 'last_name = ? AND first_name = ?'
-
-            self.execute_query(f"DELETE FROM {table_name} WHERE {condition_clause}", tuple(params))
-        except sqlite3.Error as sql_error:
-            print(f"Помилка delete_from_table: {sql_error}")
+        query = f"DELETE FROM {table_name} WHERE {condition_clause}"
+        self.execute_query(query, tuple(params))
 
     def truncate_table(self, table_name: str):
         """
@@ -151,14 +136,8 @@ class DB:
 
         :param table_name: str, назва таблиці, яку потрібно очистити
         """
-        if not self.conn:
-            print("Не встановлено підключення")
-            return None
-
-        try:
-            self.execute_query(f"DELETE FROM {table_name}")
-        except sqlite3.Error as sql_error:
-            print(f"Помилка truncate_table: {sql_error}")
+        query = f"DELETE FROM {table_name}"
+        self.execute_query(query)
 
     def count_rows(self, table_name: str):
         """
@@ -167,16 +146,11 @@ class DB:
         :param table_name: Str, назва таблиці в базі даних
         :return: кількість рядків в таблиці
         """
-        if not self.conn:
-            print("Не встановлено підключення")
-
-        try:
-            result = self.execute_query(f"SELECT COUNT(*) FROM {table_name}")
-            if result:
-                return result[0][0]
-            return 0
-        except sqlite3.Error as sql_error:
-            print(f"Помилка count_rows: {sql_error}")
+        query = f"SELECT COUNT(*) FROM {table_name}"
+        result = self.execute_query(query)
+        if result:
+            return result[0][0]
+        return 0
 
 
 # метод для обробки дат
@@ -472,89 +446,111 @@ class Form:
         :param db_file: Str, назва файлу бази даних (за замовчуванням db.db)
         :param table_name: Str, назва таблиці, до якої будемо записувати/видаляти дані (за замовчуванням 'clients')
         """
+
         self.file_name_entry = None
         self.db_file = db_file
         self.table_name = table_name
         self.client = None  # потенційний клієнт
-
-        # ініціалізація змінних для лейблів та полів вводу
-        self.last_name_label = None
-        self.last_name_entry = None
-        self.first_name_label = None
-        self.first_name_entry = None
-        self.middle_name_label = None
-        self.middle_name_entry = None
-        self.gender_label = None
-        self.gender_combobox = None
-        self.birth_date_label = None
-        self.birth_date_entry = None
-        self.death_date_label = None
-        self.death_date_entry = None
-        self.age_label = None
-        self.age_value_label = None
-        self.import_option_label = None
-        self.import_option = None
+        self.db = DB(db_file)
+        self.db.open_connection()
 
         # стилі для лейблів
         self.label_font = ("Arial", 11, "bold")
-        self.label_color = "#4B8BD4"  # приємний синій колір
+        self.label_color = "blue"
+        self.window_bg_color = "lightblue"
 
         # основне вікно
         self.window = tk.Tk()
         self.window.title("Тут ви можете працювати з клієнтськими даними")
-        self.center_window(500, 300)
-        self.window.config(bg="lightblue")
+        self.center_window(600, 400)  # Збільшили висоту вікна
+        self.window.config(bg=self.window_bg_color)
 
         # лейбли та поля вводу
-        self.create_widgets()
+        self.client_count_label = tk.Label(self.window, text="Кількість клієнтів в бд:", fg=self.label_color,
+                                           font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.client_count_label.grid(row=0, column=0, pady=5, sticky="e")
 
-    def create_widgets(self):
-        """Створення всіх елементів на формі."""
-        # лейбли та поля вводу
-        self.last_name_label, self.last_name_entry = self.create_label_entry(0, "Прізвище:")
-        self.first_name_label, self.first_name_entry = self.create_label_entry(1, "Ім'я:")
-        self.middle_name_label, self.middle_name_entry = self.create_label_entry(2, "По батькові:")
-        self.birth_date_label, self.birth_date_entry = self.create_label_entry(4, "Дата народження:", entry_width=10)
-        self.death_date_label, self.death_date_entry = self.create_label_entry(5, "Дата смерті:", entry_width=10)
+        self.client_count_value_label = tk.Label(self.window, text="0", fg=self.label_color, font=self.label_font,
+                                                 bg=self.window_bg_color)
+        self.client_count_value_label.grid(row=0, column=1, pady=5, sticky="w")
 
-        # специфічний для статі combobox
-        self.gender_label = tk.Label(self.window, text="Стать:", fg=self.label_color, font=self.label_font,
-                                     bg="lightblue",
-                                     anchor="e")
-        self.gender_label.grid(row=3, column=0, pady=5, sticky="e")
+        self.last_name_label = tk.Label(self.window, text="Прізвище:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.last_name_label.grid(row=1, column=0, pady=5, sticky="e")
+        self.last_name_entry = tk.Entry(self.window, width=40)
+        self.last_name_entry.grid(row=1, column=1, pady=5, sticky="ew")
+
+        self.first_name_label = tk.Label(self.window, text="Ім'я:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.first_name_label.grid(row=2, column=0, pady=5, sticky="e")
+        self.first_name_entry = tk.Entry(self.window, width=40)
+        self.first_name_entry.grid(row=2, column=1, pady=5, sticky="ew")
+
+        self.middle_name_label = tk.Label(self.window, text="По батькові:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.middle_name_label.grid(row=3, column=0, pady=5, sticky="e")
+        self.middle_name_entry = tk.Entry(self.window, width=40)
+        self.middle_name_entry.grid(row=3, column=1, pady=5, sticky="ew")
+
+        self.gender_label = tk.Label(self.window, text="Стать:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.gender_label.grid(row=4, column=0, pady=5, sticky="e")
         self.gender_combobox = ttk.Combobox(self.window, values=["чоловік", "жінка"], width=40, state="readonly")
-        self.gender_combobox.set("чоловік")
-        self.gender_combobox.grid(row=3, column=1, pady=5, sticky="ew")
+        self.gender_combobox.set("чоловік")  # Завжди встановлюється значення за замовчуванням
+        self.gender_combobox.grid(row=4, column=1, pady=5, sticky="ew")
 
-        # вік
-        self.age_label = tk.Label(self.window, text="Вік:", fg=self.label_color, font=self.label_font, bg="lightblue",
-                                  anchor="e")
-        self.age_label.grid(row=4, column=2, pady=5, sticky="e")
-        self.age_value_label = tk.Label(self.window, text="0", fg=self.label_color, font=self.label_font,
-                                        bg="lightblue")
-        self.age_value_label.grid(row=4, column=3, pady=5, sticky="w")
+        self.birth_date_label = tk.Label(self.window, text="Дата народження:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.birth_date_label.grid(row=5, column=0, pady=5, sticky="e")
+        self.birth_date_entry = tk.Entry(self.window, width=10)
+        self.birth_date_entry.grid(row=5, column=1, pady=5, sticky="ew")
 
-        # комбобокс для імпорту
-        self.import_option_label = tk.Label(self.window, text="Імпорт з:", fg=self.label_color, font=self.label_font,
-                                            bg="lightblue", anchor="e")
-        self.import_option_label.grid(row=6, column=0, pady=5, sticky="e")
+        self.death_date_label = tk.Label(self.window, text="Дата смерті:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.death_date_label.grid(row=6, column=0, pady=5, sticky="e")
+        self.death_date_entry = tk.Entry(self.window, width=10)
+        self.death_date_entry.grid(row=6, column=1, pady=5, sticky="ew")
+
+        self.age_label = tk.Label(self.window, text="Вік:", fg=self.label_color, font=self.label_font, bg=self.window_bg_color, anchor="e")
+        self.age_label.grid(row=7, column=2, pady=5, sticky="e")
+        self.age_value_label = tk.Label(self.window, text="0", fg=self.label_color, font=self.label_font, bg=self.window_bg_color)
+        self.age_value_label.grid(row=7, column=3, pady=5, sticky="w")
+
+        # Переміщаємо import_option напроти кнопки "Створити" (рядок 9)
         self.import_option = ttk.Combobox(self.window, values=["з форми", "з csv"], width=37, justify="center")
         self.import_option.set("з форми")
-        self.import_option.grid(row=6, column=1, pady=5, sticky="ew")
+        self.import_option.grid(row=9, column=1, pady=5, sticky="ew")
 
-    def create_label_entry(self, row, label_text, entry_width=40, label_color=None, label_font=None):
-        label = tk.Label(self.window, text=label_text, fg=label_color, font=label_font, bg="lightblue", anchor="e")
-        label.grid(row=row, column=0, pady=5, sticky="e")
-        entry = tk.Entry(self.window, width=entry_width)
-        entry.grid(row=row, column=1, pady=5, sticky="ew")
-        return label, entry
+        # Кнопки
+        self.submit_button = tk.Button(self.window, text="Створити", command=self.create_client, width=20,
+                                       bg="white", activebackground="lightgray", relief="flat", bd=2,
+                                       highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.submit_button.grid(row=9, column=0, pady=5, padx=5, sticky="ew")
 
-    def create_button(self, row, text, command):
-        button = tk.Button(self.window, text=text, command=command, width=20, bg="white",
-                           activebackground="lightgray", relief="flat", bd=2, highlightthickness=0,
-                           font=("Arial", 10, "bold"), pady=5)
-        button.grid(row=row, column=0, pady=5, padx=5, sticky="ew")
-        return button
+        # Розміщуємо кнопку "Знайти" під кнопкою "Створити" та кнопку "Видалити" справа від "Знайти"
+        self.search_button = tk.Button(self.window, text="Знайти", command=self.search_client, width=20,
+                                       bg="white", activebackground="lightgray", relief="flat", bd=2,
+                                       highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.search_button.grid(row=10, column=0, pady=5, padx=5, sticky="ew")
+
+        self.delete_button = tk.Button(self.window, text="Видалити", command=self.delete_client, width=20,
+                                       bg="white", activebackground="lightgray", relief="flat", bd=2,
+                                       highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        self.delete_button.grid(row=10, column=1, pady=5, padx=5, sticky="ew")
+
+        # при закритті форми закриваємо коннекшн
+        self.window.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.window.mainloop()
+
+    def on_close(self):
+        """при закритті вікна закривається і з'єднання до бд"""
+        self.db.close_connection()  # Закриваємо підключення до БД
+        self.window.destroy()  # Закриваємо вікно
+
+    def count_rows(self):
+        """кількості клієнтів в бд"""
+        db = DB(self.db_file)
+        return db.count_rows(self.table_name)  # Повертаємо результат з класу БД
+
+    def update_client_count(self):
+        """Оновлює кількість клієнтів в базі даних та відображає на формі"""
+        client_count = self.count_rows()
+        self.client_count_value_label.config(text=str(client_count))
 
     def calculate_age(self, event=None):
         """вік"""
@@ -602,7 +598,7 @@ class Form:
             # створення клієнта в бд + перевірка на обов'язкові поля
             missing_fields = []
 
-            # поле дата смерті не є обов'язковим
+            # поле дата смерті не є обов'язковим, також не перевіряємо стать, бо там список
             if not self.last_name_entry.get():
                 missing_fields.append(self.last_name_entry)
                 self.last_name_entry.config(highlightbackground="red", highlightthickness=2)
@@ -621,12 +617,6 @@ class Form:
                 self.middle_name_entry.config(highlightbackground="red", highlightthickness=2)
             else:
                 self.middle_name_entry.config(highlightbackground="lightblue", highlightthickness=1)
-
-            if not self.gender_combobox.get():
-                missing_fields.append(self.gender_combobox)
-                self.gender_combobox.config(highlightbackground="red", highlightthickness=2)
-            else:
-                self.gender_combobox.config(highlightbackground="lightblue", highlightthickness=1)
 
             if not self.birth_date_entry.get():
                 missing_fields.append(self.birth_date_entry)
