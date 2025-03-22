@@ -159,6 +159,23 @@ class DB:
         else:
             return 0
 
+    def print_all_rows(self, table_name: str):
+        """
+        Виводить всі рядки з вказаної таблиці в базі даних.
+
+        :param table_name: Str, назва таблиці в базі даних
+        """
+        query = f"SELECT * FROM {table_name}"
+        result = self.execute_query(query)
+
+        if result:
+            # Проходимо через всі рядки результату та виводимо кожен окремо
+            for row in result:
+                print(row)
+        else:
+            print(f"Таблиця {table_name} порожня або не існує.")
+
+
 # метод для обробки дат
 def process_date(date_str: str):
     """
@@ -290,80 +307,127 @@ class Client:
                 client = Client(row["last_name"], row["first_name"], row["middle_name"], row["gender"], birth_date, death_date)
                 client.add_one_client(db, table_name)
 
+    # def find_clients(self, db: DB, table: str, export_to_csv: bool = True):
+    #     result_sql = db.execute_query(f"SELECT * FROM {table}")  # Отримуємо всі записи
+    #
+    #     clients = {}
+    #
+    #     for row in result_sql:
+    #         is_match = True  # Припускаємо, що клієнт підходить під умови
+    #
+    #         # Перевірка прізвища
+    #         if self.last_name:
+    #             if self.last_name.lower() not in row[1].lower():  # Перевірка на часткові співпадіння
+    #                 is_match = False
+    #
+    #         # Перевірка імені
+    #         if self.first_name:
+    #             if self.first_name.lower() not in row[2].lower():
+    #                 is_match = False
+    #
+    #         # Перевірка по батькові
+    #         if self.middle_name:
+    #             if self.middle_name.lower() not in row[3].lower():
+    #                 is_match = False
+    #
+    #         # Перевірка статі
+    #         if self.gender:
+    #             if self.gender.lower() != row[4].lower():
+    #                 is_match = False
+    #
+    #         # Перевірка дати народження
+    #         if self.birth_date:
+    #             if self.birth_date != row[5]:  # Тут можна додати додаткову обробку дати
+    #                 is_match = False
+    #
+    #         # Перевірка дати смерті
+    #         if self.death_date:
+    #             if self.death_date != row[6]:  # Аналогічно
+    #                 is_match = False
+    #
+    #         # Якщо всі умови виконуються, додаємо клієнта
+    #         if is_match:
+    #             client_id = row[0]
+    #             client = Client(
+    #                 last_name=row[1],
+    #                 first_name=row[2],
+    #                 middle_name=row[3],
+    #                 gender=row[4],
+    #                 birth_date=row[5],
+    #                 death_date=row[6]
+    #             )
+    #             clients.update({client_id: client})
+    #
+    #     # Якщо потрібно експортувати в CSV
+    #     if export_to_csv:
+    #         file_name = 'found_clients.csv'
+    #         i = 1
+    #         while os.path.exists(file_name):
+    #             file_name = f'found_clients_{i}.csv'
+    #             i += 1
+    #
+    #         with open(file_name, mode='w', newline='', encoding='utf-8-sig') as file:
+    #             writer = csv.writer(file)
+    #             writer.writerow(["id", "last_name", "first_name", "middle_name", "gender", "birth_date", "death_date"])
+    #             for client_id, client in clients.items():
+    #                 writer.writerow([client_id, client.last_name, client.first_name,
+    #                                  client.middle_name, client.gender, client.birth_date, client.death_date])
+    #
+    #     return clients
+
     def find_clients(self, db: DB, table: str, export_to_csv: bool = True):
-        """
-        пошук клієнта за частковими збігами в прізвищі, імені, по батькові
-
-        :param db: DB, підключення до бази даних
-        :param table: str, назва таблиці
-        :param export_to_csv: bool, якщо True, експортує клієнтів у csv
-        :return: list, список клієнтів, що відповідають умовам
-        """
         conditions = []
-        params = []
-
-        # Пошук за прізвищем
-        if self.last_name:
-            conditions.append("last_name LIKE ?")
-            params.append(f"%{self.last_name}%")
-
-        # Пошук за ім'ям
-        if self.first_name:
-            conditions.append("first_name LIKE ?")
-            params.append(f"%{self.first_name}%")
-
-        # Пошук за по батькові
-        if self.middle_name:
-            conditions.append("middle_name LIKE ?")
-            params.append(f"%{self.middle_name}%")
-
-        # Пошук за статтю
-        if self.gender:
-            conditions.append("gender = ?")
-            params.append(self.gender)
-
-        # Пошук за датою народження
-        if self.birth_date:
-            birth_date = process_date(self.birth_date)
-            if birth_date:
-                conditions.append("birth_date = ?")
-                params.append(birth_date)
-
-        # Пошук за датою смерті
-        if self.death_date:
-            death_date = process_date(self.death_date)
-            if death_date:
-                conditions.append("death_date = ?")
-                params.append(death_date)
-
-        # Якщо немає жодних умов для пошуку
-        if not conditions:
-            print("Вкажіть хоча б 1 параметр для пошуку")
-            return []
-
-        # Формуємо частину умови WHERE для SQL-запиту
-        condition_clause = " AND ".join(conditions)
-
-        # Формуємо запит
-        query = f"SELECT * FROM {table} WHERE {condition_clause}"
-
-        # Виконуємо запит до бази даних
-        result = db.execute_query(query, tuple(params))
+        result_sql = db.execute_query(f"SELECT * FROM {table}")  # Отримуємо всі записи
 
         clients = {}
-        for row in result:
-            client = Client(
-                last_name=row[1],
-                first_name=row[2],
-                middle_name=row[3],
-                gender=row[4],
-                birth_date=row[5],
-                death_date=row[6]  # Додаємо обробку дати смерті
-            )
-            client_id = row[0]
-            clients.update({client_id: client})
 
-        # Якщо потрібно експортувати дані в CSV
+        for row in result_sql:
+            is_match = True  # Припускаємо, що клієнт підходить під умови
+
+            # Перевірка прізвища
+            if self.last_name:
+                if self.last_name.lower() not in row[1].lower():  # Перевірка на часткові співпадіння
+                    is_match = False
+
+            # Перевірка імені
+            if self.first_name:
+                if self.first_name.lower() not in row[2].lower():  # Перевірка на часткові співпадіння
+                    is_match = False
+
+            # Перевірка по-батькові
+            if self.middle_name:
+                if self.middle_name.lower() not in row[3].lower():  # Перевірка на часткові співпадіння
+                    is_match = False
+
+            # Перевірка статі
+            if self.gender:
+                if self.gender.lower() != row[4].lower():
+                    is_match = False
+
+            # Перевірка дати народження
+            if self.birth_date:
+                if self.birth_date != row[5]:  # Тут можна додати додаткову обробку дати
+                    is_match = False
+
+            # Перевірка дати смерті
+            if self.death_date:
+                if self.death_date != row[6]:  # Аналогічно
+                    is_match = False
+
+            # Якщо всі умови виконуються, додаємо клієнта
+            if is_match:
+                client_id = row[0]
+                client = Client(
+                    last_name=row[1],
+                    first_name=row[2],
+                    middle_name=row[3],
+                    gender=row[4],
+                    birth_date=row[5],
+                    death_date=row[6]
+                )
+                clients.update({client_id: client})
+
+        # Якщо потрібно експортувати в CSV
         if export_to_csv:
             file_name = 'found_clients.csv'
             i = 1
@@ -394,50 +458,6 @@ class Client:
             for client_id, client in clients_to_delete.items():
                 conditions = {'id': client_id}
                 db.delete_from_table(table_name, conditions)
-
-
-#################################################################
-db1 = DB('db.db')
-
-# print(db1)
-db1.open_connection()
-db1.drop_table('clients')
-db1.create_table('clients',"last_name TEXT,first_name TEXT, middle_name TEXT, gender TEXT, birth_date DATE, death_date DATE")
-
-clients_table = 'clients'
-print(db1.count_rows(clients_table))
-
-db1.truncate_table(clients_table)
-#################################################################
-
-cl1 = Client('Пухальська','Марина','Василівна','жінка','21.10.1983')
-print(cl1)
-cl2 = Client('Анкудінова',"Дар'я",'Сергіївна','жінка','25.04.1995')
-print(cl2)
-cl3 = Client('Іванов',"Іван",'Іванович',gender='чоловік',birth_date='20.01.1933',death_date = '20.01.1989')
-print(cl3)
-
-cl1.add_one_client(db1,clients_table)
-cl2.add_one_client(db1,clients_table)
-cl3.add_one_client(db1,clients_table)
-
-# cl1.find_clients(db1,clients_table)
-# Client(gender='Ж').find_clients(db1,clients_table)
-# Client(gender='Ч').find_clients(db1,clients_table)
-# Client(birth_date='21.10.1983',gender='Ж').find_clients(db1,clients_table)
-
-print(db1.count_rows(clients_table))
-# Client(gender='Ж').delete_client(db1,clients_table)
-# print(db1.count_rows(clients_table))
-
-# Client.add_client_from_csv(db1, 'clients', 'found_clients_1.csv')
-# Client.add_client_from_csv(db1, 'clients', 'found_clients_2.csv')
-# Client.add_client_from_csv(db1, 'clients', 'found_clients_1.csv')
-
-# print(db1.count_rows(clients_table))
-# print("УРА!!")
-db1.close_connection()
-#################################################################
 
 class Form:
     def __init__(self, db_file='db.db', table_name='clients'):
@@ -500,8 +520,8 @@ class Form:
         self.gender_label = tk.Label(self.window, text="Стать:", fg=self.label_color, font=self.label_font,
                                      bg=self.window_bg_color, anchor="e")
         self.gender_label.grid(row=5, column=0, pady=5, sticky="e")
-        self.gender_combobox = ttk.Combobox(self.window, values=["чоловік", "жінка"], width=40, state="readonly")
-        self.gender_combobox.set("чоловік")  # Завжди встановлюється значення за замовчуванням
+        self.gender_combobox = ttk.Combobox(self.window, background="white", values=["чоловік", "жінка", ""], width=40, state="readonly")
+        self.gender_combobox.set("")  # Завжди встановлюється значення за замовчуванням
         self.gender_combobox.grid(row=5, column=1, pady=5, sticky="ew")
 
         self.birth_date_label = tk.Label(self.window, text="Дата народження:", fg=self.label_color,
@@ -549,7 +569,7 @@ class Form:
                                        highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
         self.delete_button.grid(row=10, column=1, pady=5, padx=5, sticky="ew")
         # просто for fun :)
-        self.auto_fun_button = tk.Button(self.window, text="Отримати умішку", width=15, command=self.create_smiley_window,
+        self.auto_fun_button = tk.Button(self.window, text="Отримати щастя :)", width=15, command=self.create_smiley_window,
                                          bg="#FFFFCC", activebackground="#FFFFCC", relief="flat", bd=2,
                                          highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
         self.auto_fun_button.grid(row=0, column=0, padx=5)
@@ -660,7 +680,7 @@ class Form:
             # створення клієнта в бд + перевірка на обов'язкові поля
             missing_fields = []
 
-            # поле дата смерті не є обов'язковим, також не перевіряємо стать, бо там список
+            # поле дата смерті не є обов'язковим
             if not self.last_name_entry.get():
                 missing_fields.append(self.last_name_entry)
                 self.last_name_entry.config(highlightbackground="red", highlightthickness=2)
@@ -679,6 +699,12 @@ class Form:
                 self.middle_name_entry.config(highlightbackground="red", highlightthickness=2)
             else:
                 self.middle_name_entry.config(highlightbackground="lightblue", highlightthickness=1)
+
+            if not self.gender_combobox.get():
+                missing_fields.append(self.gender_combobox)
+                self.gender_combobox.config(background="red")
+            else:
+                self.gender_combobox.config(background="white")
 
             if not self.birth_date_entry.get():
                 missing_fields.append(self.birth_date_entry)
@@ -772,40 +798,40 @@ class Form:
             import_button.pack(pady=10)
 
     def search_client(self):
-        # Спочатку запам'ятовуємо дані клієнта з форми
+        # client.find_clients
         self.remember_client()
+        print(self.client)
+        clients = self.client.find_clients(self.db, self.table_name,export_to_csv = True)
 
-        # метод find_clients
-        clients = self.client.find_clients(self.db, self.table_name, export_to_csv=False)
-
-        # вікно для результатів пошуку
+        # Вікно для результатів пошуку
         result_window = tk.Toplevel(self.window)
         result_window.title("Знайдені клієнти")
-        result_window.geometry("500x400")
-        result_text = tk.Text(result_window, width=60, height=15, wrap=tk.WORD, bg="lightblue",
-                              fg="#4B8BD4", font=("Arial", 10))
+        result_window.geometry("500x300")
+        result_text = tk.Text(result_window, width=60, height=15, wrap=tk.WORD, bg="lightblue", fg="#4B8BD4",
+                              font=("Arial", 10))
         result_text.pack(padx=10, pady=10)
         close_button = tk.Button(result_window, text="Закрити", command=result_window.destroy)
         close_button.pack(pady=5)
 
-        # клієнтів знайдено
+        # Якщо клієнтів знайдено
         if clients:
-            # додаємо інформацію в текстове поле
+            # Додаємо інформацію в текстове поле
             for client_id, client in clients.items():
                 # Обчислюємо вік клієнта
                 birth_date = datetime.strptime(client.birth_date, "%d.%m.%Y")
                 today = datetime.today()
                 age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
-                client_text = f"{client.first_name} {client.last_name} {client.middle_name} - {age} років\n" \
+                client_text = f"{client.last_name} {client.first_name} {client.middle_name} - {age} р.\n" \
                               f"Стать: {client.gender}\n" \
                               f"Дата народження: {client.birth_date}\n" \
                               f"Дата смерті: {client.death_date}\n\n"
 
                 result_text.insert(tk.END, client_text)
-                self.clear_entries()
         else:
             result_text.insert(tk.END, 'Не знайдено!')
+
+        self.clear_entries()
 
     def delete_client(self):
         self.remember_client()
@@ -844,7 +870,7 @@ class Form:
         self.birth_date_entry.delete(0, tk.END)
         self.death_date_entry.delete(0, tk.END)
         self.age_value_label.config(text="0")  # Очищаємо вік, якщо потрібно
-        self.gender_combobox.set("чоловік")  # Встановлюємо значення за замовчуванням для комбобоксу
+        self.gender_combobox.set("")  # Встановлюємо значення за замовчуванням для комбобоксу
 
     @staticmethod
     def create_smiley_window():
@@ -889,6 +915,51 @@ class Form:
         label.image = tk_image
 
 
+#################################################################
+db1 = DB('db.db')
+
+# print(db1)
+db1.open_connection()
+db1.drop_table('clients')
+db1.create_table('clients',"last_name TEXT,first_name TEXT, middle_name TEXT, gender TEXT, birth_date DATE, death_date DATE")
+
+clients_table = 'clients'
+print(db1.count_rows(clients_table))
+
+db1.truncate_table(clients_table)
+#################################################################
+
+cl1 = Client('Пухальська','Марина','Василівна','жінка','21.10.1983')
+print(cl1)
+cl2 = Client('Анкудінова',"Дар'я",'Сергіївна','жінка','25.04.1995')
+print(cl2)
+cl3 = Client('Іванов',"Іван",'Іванович',gender='чоловік',birth_date='20.01.1933',death_date = '20.01.1989')
+print(cl3)
+
+cl1.add_one_client(db1,clients_table)
+cl2.add_one_client(db1,clients_table)
+cl3.add_one_client(db1,clients_table)
+
+# cl1.find_clients(db1,clients_table)
+# print(Client(last_name='Анкудінова').find_clients(db1,clients_table,False))
+# Client(gender='Ч').find_clients(db1,clients_table)
+# Client(birth_date='21.10.1983',gender='Ж').find_clients(db1,clients_table)
+
+# print(db1.count_rows(clients_table))
+# Client(gender='Ж').delete_client(db1,clients_table)
+# print(db1.count_rows(clients_table))
+
+# Client.add_client_from_csv(db1, 'clients', 'found_clients_1.csv')
+# Client.add_client_from_csv(db1, 'clients', 'found_clients_2.csv')
+# Client.add_client_from_csv(db1, 'clients', 'found_clients_1.csv')
+
+# print(db1.count_rows(clients_table))
+# print("УРА!!")
+db1.print_all_rows('clients')
+
+db1.close_connection()
+
+#################################################################
 # Запуск програми
 form = Form()
 form.window.mainloop()
