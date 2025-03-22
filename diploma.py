@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk,messagebox
 import sqlite3
 import csv
 import os
@@ -376,7 +376,7 @@ class Client:
     #     return clients
 
     def find_clients(self, db: DB, table: str, export_to_csv: bool = True):
-        conditions = []
+
         result_sql = db.execute_query(f"SELECT * FROM {table}")  # Отримуємо всі записи
 
         clients = {}
@@ -394,7 +394,7 @@ class Client:
                 if self.first_name.lower() not in row[2].lower():  # Перевірка на часткові співпадіння
                     is_match = False
 
-            # Перевірка по-батькові
+            # Перевірка по батькові
             if self.middle_name:
                 if self.middle_name.lower() not in row[3].lower():  # Перевірка на часткові співпадіння
                     is_match = False
@@ -744,12 +744,68 @@ class Form:
             self.clear_entries()
 
         # якщо вибрано "з csv"
+        # elif self.import_option.get() == "з csv":
+        #     # відкриваємо вікно для введення назви файлу
+        #     def import_from_csv():
+        #         my_file_name = self.file_name_entry.get()  # отримуємо введену назву файлу
+        #         Client.add_client_from_csv(self.db, self.table_name,my_file_name)  # викликаємо метод для імпорту
+        #
+        #         # повідомленням про успішний імпорт
+        #         success_window2 = tk.Toplevel(self.window)
+        #         success_window2.title("Імпорт з CSV")
+        #         success_window2.geometry("300x150")
+        #
+        #         # Для того, щоб вікно було по центру екрана:
+        #         window_width2 = 300
+        #         window_height2 = 150
+        #         screen_width2 = self.window.winfo_screenwidth()
+        #         screen_height2 = self.window.winfo_screenheight()
+        #         position_top2 = int(screen_height2 / 2 - window_height2 / 2)
+        #         position_right2 = int(screen_width2 / 2 - window_width2 / 2)
+        #         success_window2.geometry(f"{window_width2}x{window_height2}+{position_right2}+{position_top2}")
+        #
+        #         success_label2 = tk.Label(success_window2, text="Успішно імпортовано клієнтів!", font=self.label_font,
+        #                                   fg=self.label_color, bg="lightblue")
+        #         success_label2.pack(padx=20, pady=20)
+        #         close_button2 = tk.Button(success_window2, text="Закрити", command=success_window2.destroy, width=15,
+        #                                   bg="white", activebackground="lightgray", relief="flat", bd=2,
+        #                                   highlightthickness=0, font=("Arial", 10, "bold"), pady=5)
+        #         close_button2.pack(pady=10)
+        #         self.clear_entries()
+        #         self.update_client_count()
+        #
+        #     # створюємо нове вікно для введення назви файлу
+        #     file_window = tk.Toplevel(self.window)
+        #     file_window.title("Вибір файлу для імпорту")
+        #     file_window.geometry("400x150")
+        #
+        #     # лейбл для поля вводу назви файлу
+        #     file_label = tk.Label(file_window, text="Введіть назву файлу:", font=self.label_font,
+        #                           fg=self.label_color, bg="lightblue")
+        #     file_label.pack(padx=10, pady=10)
+        #
+        #     # поле вводу для назви файлу, за замовчуванням "import_clients.csv"
+        #     self.file_name_entry = tk.Entry(file_window, width=40)
+        #     self.file_name_entry.insert(0, "import_clients.csv")  # значення за замовчуванням
+        #     self.file_name_entry.pack(padx=10, pady=5)
+        #
+        #     # кнопка для підтвердження імпорту
+        #     import_button = tk.Button(file_window, text="Імпортувати", command=import_from_csv,
+        #                               width=20, bg="white", activebackground="lightgray",
+        #                               relief="flat", bd=2, highlightthickness=0,
+        #                               font=("Arial", 10, "bold"), pady=5)
+        #     import_button.pack(pady=10)
         elif self.import_option.get() == "з csv":
             # відкриваємо вікно для введення назви файлу
             def import_from_csv():
                 my_file_name = self.file_name_entry.get()  # отримуємо введену назву файлу
-                self.client.add_client_from_csv(self.db_file, self.table_name,
-                                                my_file_name)  # викликаємо метод для імпорту
+
+                # чи існує файл
+                if not os.path.isfile(my_file_name):
+                    messagebox.showerror("Помилка", "Файл не знайдено!")
+                    return  # Зупиняємо подальше виконання, якщо файл не знайдений
+
+                Client.add_client_from_csv(self.db, self.table_name, my_file_name)  # викликаємо метод для імпорту
 
                 # повідомленням про успішний імпорт
                 success_window2 = tk.Toplevel(self.window)
@@ -798,11 +854,8 @@ class Form:
             import_button.pack(pady=10)
 
     def search_client(self):
-        # client.find_clients
         self.remember_client()
-        print(self.client)
         clients = self.client.find_clients(self.db, self.table_name,export_to_csv = True)
-
         # Вікно для результатів пошуку
         result_window = tk.Toplevel(self.window)
         result_window.title("Знайдені клієнти")
@@ -835,8 +888,7 @@ class Form:
 
     def delete_client(self):
         self.remember_client()
-        clients = self.client.find_clients(self.db, self.table_name)
-
+        clients = self.client.find_clients(self.db, self.table_name,export_to_csv = False)
         # вікно для результатів пошуку
         result_window = tk.Toplevel(self.window)
         result_window.title("Видалені клієнти")
@@ -848,9 +900,10 @@ class Form:
         close_button.pack(pady=5)
 
         if clients:
-            self.client.delete_one_client(self.db_file, self.table_name)
-            result_text.insert(tk.END, f"Клієнта {self.client.last_name} {self.client.first_name} видалено")
+            self.client.delete_client(self.db, self.table_name)
+            result_text.insert(tk.END, f"Видалено!")
             self.clear_entries()
+            self.update_client_count()
         else:
             result_text.insert(tk.END, f"Клієнта для видалення не знайдено!")
 
