@@ -31,7 +31,8 @@ class Form:
 
         # основне вікно
         self.window = tk.Tk()
-        self.window.title(f"НАРАЗІ БД НАЛІЧУЄ: {self.update_client_count()} кл.")
+        # self.window.title(f"НАРАЗІ БД НАЛІЧУЄ: 0 кл.")
+        self.update_client_count()
         self.center_window(500, 230)  # Збільшено розмір вікна
         self.window.config(bg=self.window_bg_color)
         self.import_option_form = tk.BooleanVar()  # checkbox
