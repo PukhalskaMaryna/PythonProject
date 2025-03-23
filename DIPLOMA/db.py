@@ -152,18 +152,18 @@ class DB:
         else:
             return 0
 
-    def print_all_rows(self, table_name: str):
-        """
-        Виводить всі рядки з вказаної таблиці в базі даних.
-
-        :param table_name: Str, назва таблиці в базі даних
-        """
-        query = f"SELECT * FROM {table_name}"
-        result = self.execute_query(query)
-
-        if result:
-            # Проходимо через всі рядки результату та виводимо кожен окремо
-            for row in result:
-                print(row)
-        else:
-            print(f"Таблиця {table_name} порожня або не існує.")
+    # def print_all_rows(self, table_name: str):
+    #     """
+    #     Виводить всі рядки з вказаної таблиці в базі даних.
+    #
+    #     :param table_name: Str, назва таблиці в базі даних
+    #     """
+    #     query = f"SELECT * FROM {table_name}"
+    #     result = self.execute_query(query)
+    #
+    #     if result:
+    #         # Проходимо через всі рядки результату та виводимо кожен окремо
+    #         for row in result:
+    #             print(row)
+    #     else:
+    #         print(f"Таблиця {table_name} порожня або не існує.")
