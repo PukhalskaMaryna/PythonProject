@@ -135,7 +135,6 @@ class Client:
                 if self.death_date != row[6]:  # Аналогічно
                     is_match = False
 
-            # Якщо всі умови виконуються, додаємо клієнта
             if is_match:
                 client_id = row[0]
                 client = Client(
@@ -148,7 +147,7 @@ class Client:
                 )
                 clients.update({client_id: client})
 
-        # Якщо потрібно експортувати в CSV
+        # csv
         if export_to_csv:
             file_name = 'found_clients.csv'
             i = 1

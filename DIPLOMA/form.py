@@ -3,7 +3,7 @@ from tkinter import ttk,messagebox
 import os
 from datetime import datetime
 import random
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageTk
 from DIPLOMA.db import DB
 from DIPLOMA.single_funcs import process_date, reset_entry, reset_combobox
 from DIPLOMA.client import Client
@@ -112,7 +112,7 @@ class Form:
         self.submit_button.bind("<Enter>", lambda event: self.help_text.config(text="Очищення форми"))
         self.submit_button.bind("<Leave>", lambda event: self.help_text.config(text=""))
 
-        # елементи в правому фреймі
+        # елементи у правому фреймі
         self.last_name_label = tk.Label(self.center_frame, text="Прізвище:", fg=self.label_color, font=self.label_font,
                                         bg=self.window_bg_color, anchor="e")
         self.last_name_label.grid(row=1, column=0, pady=1, sticky="ew")
@@ -324,7 +324,7 @@ class Form:
                 # чи існує файл
                 if not os.path.isfile(my_file_name):
                     messagebox.showerror("Помилка", "Файл не знайдено!")
-                    return  # Зупиняємо подальше виконання, якщо файл не знайдений
+                    return
 
                 Client.add_client_from_csv(self.db, self.table_name, my_file_name)  # викликаємо метод для імпорту
 
@@ -341,7 +341,7 @@ class Form:
             file_window.geometry("400x150")
             file_window.config(bg=self.window_bg_color)
 
-            # Центруємо вікно на екрані
+            # центруємо вікно на екрані
             window_width = 400
             window_height = 150
             screen_width = self.window.winfo_screenwidth()
@@ -375,8 +375,8 @@ class Form:
 
             # обробник закриття вікна, щоб зняти блокування основного вікна
             def on_close_file_window():
-                file_window.grab_release()  # Відновлюємо взаємодію з основним вікном
-                file_window.destroy()  # Закриваємо вікно
+                file_window.grab_release()
+                file_window.destroy()
 
             # підключаємо обробник події закриття вікна
             file_window.protocol("WM_DELETE_WINDOW", on_close_file_window)
@@ -393,11 +393,9 @@ class Form:
         self.remember_client()
         clients = self.client.find_clients(self.db, self.table_name, export_to_csv=True)
 
-        # Вікно для результатів пошуку
         result_window = tk.Toplevel(self.window)
         result_window.title("Знайдені клієнти")
 
-        # Визначаємо розміри вікна
         window_width = 600
         window_height = 400
         screen_width = self.window.winfo_screenwidth()
@@ -426,7 +424,6 @@ class Form:
         my_table.column("Дата народження", width=100)
         my_table.column("Дата смерті", width=100)
 
-        # Вставляємо знайдені дані у таблицю
         if clients:
             for client_id, client in clients.items():
                 birth_date = datetime.strptime(client.birth_date, "%d.%m.%Y")
@@ -457,7 +454,6 @@ class Form:
         close_button.pack(pady=10)
 
     def delete_client(self):
-        # Показуємо підтвердження перед видаленням
         confirm = messagebox.askyesno("Підтвердження", "Ви впевнені, що хочете видалити?")
 
         if confirm:
