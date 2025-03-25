@@ -5,7 +5,7 @@ from datetime import datetime
 import random
 from PIL import Image, ImageDraw, ImageTk
 from DIPLOMA.db import DB
-from DIPLOMA.tras_date import process_date
+from DIPLOMA.single_funcs import process_date, reset_entry, reset_combobox
 from DIPLOMA.client import Client
 
 class Form:
@@ -154,10 +154,9 @@ class Form:
         self.birth_date_label = tk.Label(self.center_frame, text="Дата народження:", fg=self.label_color,
                                          font=self.label_font, bg=self.window_bg_color, anchor="e")
         self.birth_date_label.grid(row=5, column=0, pady=1, sticky="e")
-        self.birth_date_entry = tk.Entry(self.center_frame, width=15,
-                                         highlightbackground="white", highlightthickness=1)
+        self.birth_date_entry = tk.Entry(self.center_frame, width=15)
         self.birth_date_entry.grid(row=5, column=1, pady=1, sticky="w")
-        self.birth_date_entry.bind("<KeyRelease>", self.calculate_age) # оновлення віку
+        self.birth_date_entry.bind("<KeyRelease>", lambda event: self.calculate_age()) # оновлення віку
 
         self.death_date_label = tk.Label(self.center_frame, text="Дата смерті:", fg=self.label_color,
                                          font=self.label_font,
@@ -165,7 +164,7 @@ class Form:
         self.death_date_label.grid(row=6, column=0, pady=1, sticky="e")
         self.death_date_entry = tk.Entry(self.center_frame, width=15)
         self.death_date_entry.grid(row=6, column=1, pady=1, sticky="w")
-        self.death_date_entry.bind("<KeyRelease>", self.calculate_age) # оновлення віку
+        self.death_date_entry.bind("<KeyRelease>", lambda event: self.calculate_age()) # оновлення віку
 
         self.age_label = tk.Label(self.center_frame, text="Вік:", fg=self.label_color, font=self.label_font,
                                   bg=self.window_bg_color, anchor="e")
@@ -233,7 +232,7 @@ class Form:
         client_count = self.count_rows()
         self.client_count_value_label.config(text=str(client_count))
 
-    def calculate_age(self, event=None):
+    def calculate_age(self):
         """вік"""
         birth_date_text = self.birth_date_entry.get()
         death_date_text = self.death_date_entry.get()  # отримуємо дату смерті
@@ -284,28 +283,28 @@ class Form:
             # поле дата смерті не є обов'язковим
             if not self.last_name_entry.get():
                 missing_fields.append(self.last_name_entry)
-                self.last_name_entry.config(highlightbackground="red", highlightthickness=2)
-                self.last_name_entry.after(400, self.reset)
+                self.last_name_entry.config(highlightbackground="red", highlightthickness=1)
+                self.last_name_entry.after(400, reset_entry,self.last_name_entry)
 
             if not self.first_name_entry.get():
                 missing_fields.append(self.first_name_entry)
-                self.first_name_entry.config(highlightbackground="red", highlightthickness=2)
-                self.first_name_entry.after(400, self.reset)
+                self.first_name_entry.config(highlightbackground="red", highlightthickness=1)
+                self.first_name_entry.after(400, reset_entry,self.first_name_entry)
 
             if not self.middle_name_entry.get():
                 missing_fields.append(self.middle_name_entry)
-                self.middle_name_entry.config(highlightbackground="red", highlightthickness=2)
-                self.middle_name_entry.after(400, self.reset)
+                self.middle_name_entry.config(highlightbackground="red", highlightthickness=1)
+                self.middle_name_entry.after(400, reset_entry,self.middle_name_entry)
 
             if not self.gender_combobox.get() or self.gender_combobox.get() == " ":
                 missing_fields.append(self.gender_combobox)
                 self.gender_combobox.set("!!!!!!!!!!!!!")
-                self.gender_combobox.after(400, self.reset)
+                self.gender_combobox.after(400, reset_combobox,self.gender_combobox)
 
             if not self.birth_date_entry.get():
                 missing_fields.append(self.birth_date_entry)
-                self.birth_date_entry.config(highlightbackground="red", highlightthickness=2)
-                self.birth_date_entry.after(400, self.reset)
+                self.birth_date_entry.config(highlightbackground="red", highlightthickness=1)
+                self.birth_date_entry.after(400, reset_entry,self.birth_date_entry)
 
             if missing_fields:
                 return
@@ -383,12 +382,12 @@ class Form:
             file_window.protocol("WM_DELETE_WINDOW", on_close_file_window)
 
     def reset(self):
-        self.first_name_entry.config(highlightbackground="", highlightthickness=0)
-        self.middle_name_entry.config(highlightbackground="", highlightthickness=0)
-        self.last_name_entry.config(highlightbackground="", highlightthickness=0)
+        self.first_name_entry.config(highlightbackground="white", highlightthickness=1)
+        self.middle_name_entry.config(highlightbackground="white", highlightthickness=1)
+        self.last_name_entry.config(highlightbackground="white", highlightthickness=1)
         if self.gender_combobox.get() == '!!!!!!!!!!!!!':
             self.gender_combobox.set("")
-        self.birth_date_entry.config(highlightbackground="", highlightthickness=0)
+        self.birth_date_entry.config(highlightbackground="white", highlightthickness=1)
 
     def search_client(self):
         self.remember_client()

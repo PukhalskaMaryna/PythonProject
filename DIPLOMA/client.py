@@ -1,7 +1,7 @@
 import csv
 import os
 from DIPLOMA.db import DB
-from DIPLOMA.tras_date import process_date
+from DIPLOMA.single_funcs import process_date
 
 class Client:
     def __init__(self

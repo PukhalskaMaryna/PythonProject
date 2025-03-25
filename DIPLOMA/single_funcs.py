@@ -37,3 +37,10 @@ def process_date(date_str: str):
             return None
 
     return None
+
+def reset_entry(wig):
+    wig.config(highlightbackground="white", highlightthickness=1)
+
+def reset_combobox(wig):
+    if wig.get() == '!!!!!!!!!!!!!':
+        wig.set("")
