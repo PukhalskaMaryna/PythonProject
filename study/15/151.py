@@ -15,8 +15,8 @@ class Rectangle:
     def __add__(self, other):
         if isinstance(other, Rectangle):
             total_area = self.get_square() + other.get_square()
-            width = self.width # як варіант забрати ширину 1ого прямокутника
-            height = total_area / width # і вирахувати висоту
+            width = 1 # як варіант зробити ширину 1
+            height = total_area # і висота = площі тоді
             return Rectangle(width, height)
         return None
 
