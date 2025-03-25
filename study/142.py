@@ -17,13 +17,15 @@ class Student(Human):
     def __str__(self):
         return f"{super().__str__()}, record book: {self.record_book}"
 
-    def __eq__(self, student):
-        return str(self) == str(student)
+    def __eq__(self, other):
+        if isinstance(other, Student):
+            return str(self) == str(other)
+        return False
 
 
 class ErrorForMaxCount(Exception):
     """Виключення, коли група перевищує ліміт студентів"""
-    def __init__(self, msg="У групі може бути не більше 10 студентів"):
+    def __init__(self, msg = "У групі може бути не більше 10 студентів"):
         self.msg = msg
         super().__init__(self.msg)
 
@@ -53,28 +55,14 @@ class Group:
         all_students = '\n'.join(str(student) for student in self.group)
         return f'Група: {self.number}\n{all_students}'
 
-
-# Тестування:
-# st1 = Student('Male', 30, 'Steve', 'Jobs', 'AN142')
-# st2 = Student('Female', 25, 'Liza', 'Taylor', 'AN145')
-# gr = Group('PD1')
+# st1 = Student("чоловіча", 30, "Стив", "Jobs", "11111")
+# st2 = Student("чоловіча", 22, "Біл", "Гейтс", "22222")
+#
+# gr = Group(101)
 # gr.add_student(st1)
 # gr.add_student(st2)
 #
-# print(gr)
+# assert gr.find_student('Jobs') == st1  # Перевірка, чи знайшовся студент "Jobs" і чи дорівнює він st1
 #
-# # Перевірка:
-# assert gr.find_student('Jobs') == st1
+# print("ок")
 
-
-st1 = Student('Male', 30, 'Steve', 'Jobs', 'AN142')
-st2 = Student('Female', 25, 'Liza', 'Taylor', 'AN145')
-gr = Group('PD1')
-gr.add_student(st1)
-gr.add_student(st2)
-print(gr)
-assert gr.find_student('Jobs') == st1  # 'Steve Jobs'
-assert gr.find_student('Jobs2') is None
-
-gr.delete_student('Taylor')
-print(gr) # Only one student
