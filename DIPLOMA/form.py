@@ -11,7 +11,7 @@ from DIPLOMA.client import Client
 class Form:
     def __init__(self, db_file='db.db', table_name='clients'):
         """
-        Формочка для створення клієнтів.
+        формочка для створення клієнтів
 
         :param db_file: Str, назва файлу бази даних (за замовчуванням db.db)
         :param table_name: Str, назва таблиці, до якої будемо записувати/видаляти дані (за замовчуванням 'clients')
@@ -25,13 +25,12 @@ class Form:
         self.db.open_connection()
 
         # стилі для лейблів
-        self.label_font = ("Roboto", 10)
+        self.label_font = ("Comic Sans MS", 10)
         self.help_text_font = ("Comic Sans MS", 9)
-        self.submit_font = ("Roboto", 25, "bold")
+        self.submit_font = ("Comic Sans MS", 20, "bold")
         self.label_color = "white"
         self.submit_color = "white"
         self.window_bg_color = "#161F30"
-
 
         # основне вікно
         self.window = tk.Tk()
@@ -42,29 +41,25 @@ class Form:
         # img.save('client.ico', format='ICO')
         self.window.iconbitmap('client.ico')
 
-        # Створюємо два фрейми: лівий для кнопок і правий для основного контенту
+        # лівий для кнопок і правий для основного контенту
         self.frame_left = tk.Frame(self.window, bg=self.window_bg_color)
-        self.frame_left.grid(row=0, column=0, rowspan=2, sticky="ns")  # Лівий фрейм, який займає кілька рядків
+        self.frame_left.grid(row=0, column=0, rowspan=2, sticky="ns")
         self.frame_left.grid_columnconfigure(1, minsize=100)
         self.frame_right = tk.Frame(self.window, bg=self.window_bg_color)
-        self.frame_right.grid(row=0, column=1, sticky="nsew")  # Правий фрейм займає всю залишкову площу
+        self.frame_right.grid(row=0, column=1, sticky="nsew")
 
-        # Додаємо порожні фрейми у правому фреймі зверху та знизу
+        # правому фреймі зверху фрейм для підказок
         self.top_frame = tk.Frame(self.frame_right, bg=self.window_bg_color,height=50)
         self.top_frame.grid(row=0, column=0, sticky="ew")
         self.center_frame = tk.Frame(self.frame_right, bg=self.window_bg_color)
         self.center_frame.grid(row=1, column=0, sticky="nsew")
 
         # у лівому фреймі
-
         # елементи в верхньому фреймі
         self.help_text = tk.Label(self.top_frame, text="", fg="#FEDC24", font=self.help_text_font,
-                                  bg=self.window_bg_color, anchor="e", height=1)
+                                  bg=self.window_bg_color, anchor="e", height=2)
         self.help_text.grid(row=0, column=0, pady=1, sticky="w")
-        self.help_text2 = tk.Label(self.top_frame, text="", fg="#FEDC24", font=self.help_text_font,
-                                   bg=self.window_bg_color, anchor="e", height=1)
-        self.help_text2.grid(row=1, column=0, pady=1, sticky="w")
-
+        # картинка для кнопок
         photo = ImageTk.PhotoImage(Image.open('del.bmp').resize((50, 50)))
 
         self.submit_button = tk.Button(self.frame_left,
@@ -74,8 +69,8 @@ class Form:
                                        activebackground=self.window_bg_color, bd=0,
                                        highlightthickness=0, pady=0, bg=self.window_bg_color)
         self.submit_button.grid(row=0, column=0, pady=0, padx=5, sticky="nsew")
-        self.submit_button.bind("<Enter>", lambda event: self.on_clear())
-        self.submit_button.bind("<Leave>", lambda event: self.off_clear())
+        self.submit_button.bind("<Enter>", lambda event: self.help_text.config(text=f"Кнопка створення клієнта\n Можна записати із форми або із файла"))
+        self.submit_button.bind("<Leave>", lambda event: self.help_text.config(text=""))
 
         self.submit_button = tk.Button(self.frame_left,
                                        text="?", fg=self.submit_color, compound="center",
@@ -84,8 +79,8 @@ class Form:
                                        activebackground=self.window_bg_color, bd=0,
                                        highlightthickness=0, pady=0, bg=self.window_bg_color)
         self.submit_button.grid(row=1, column=0, pady=0, padx=1, sticky="nsew")
-        self.submit_button.bind("<Enter>", lambda event: self.on_find())
-        self.submit_button.bind("<Leave>", lambda event: self.off_find())
+        self.submit_button.bind("<Enter>", lambda event: self.help_text.config(text=f"Пошук клієнта\n При пошуку автоматично створюється файл"))
+        self.submit_button.bind("<Leave>", lambda event: self.help_text.config(text=""))
 
         self.submit_button = tk.Button(self.frame_left,
                                        text="–", fg=self.submit_color, compound="center",
@@ -94,8 +89,8 @@ class Form:
                                        activebackground=self.window_bg_color, bd=0,
                                        highlightthickness=0, pady=0, bg=self.window_bg_color)
         self.submit_button.grid(row=2, column=0, pady=0, padx=1, sticky="nsew")
-        self.submit_button.bind("<Enter>", lambda event: self.on_del())
-        self.submit_button.bind("<Leave>", lambda event: self.off_del())
+        self.submit_button.bind("<Enter>", lambda event: self.help_text.config(text="Видалення клієнта"))
+        self.submit_button.bind("<Leave>", lambda event: self.help_text.config(text=""))
 
         self.submit_button = tk.Button(self.frame_left,
                                        text="А", fg=self.submit_color, compound="center",
@@ -104,8 +99,8 @@ class Form:
                                        activebackground=self.window_bg_color, bd=0,
                                        highlightthickness=0, pady=0, bg=self.window_bg_color)
         self.submit_button.grid(row=3, column=0, pady=0, padx=1, sticky="nsew")
-        self.submit_button.bind("<Enter>", lambda event: self.on_a())
-        self.submit_button.bind("<Leave>", lambda event: self.off_a())
+        self.submit_button.bind("<Enter>", lambda event: self.help_text.config(text="Автозаповнення форми"))
+        self.submit_button.bind("<Leave>", lambda event: self.help_text.config(text=""))
 
         self.submit_button = tk.Button(self.frame_left,
                                        text="О", fg=self.submit_color, compound="center",
@@ -114,8 +109,8 @@ class Form:
                                        activebackground=self.window_bg_color, bd=0,
                                        highlightthickness=0, pady=0, bg=self.window_bg_color)
         self.submit_button.grid(row=4, column=0, pady=0, padx=1, sticky="nsew")
-        self.submit_button.bind("<Enter>", lambda event: self.on_o())
-        self.submit_button.bind("<Leave>", lambda event: self.off_o())
+        self.submit_button.bind("<Enter>", lambda event: self.help_text.config(text="Очищення форми"))
+        self.submit_button.bind("<Leave>", lambda event: self.help_text.config(text=""))
 
         # елементи в правому фреймі
         self.last_name_label = tk.Label(self.center_frame, text="Прізвище:", fg=self.label_color, font=self.label_font,
@@ -264,7 +259,6 @@ class Form:
             # якщо ДС немає
             today = datetime.today()
             age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-        print(age)
         self.age_value_label.config(text=str(age))
 
     def remember_client(self):
@@ -317,7 +311,6 @@ class Form:
                 return
 
             self.remember_client() # запам'ятовуємо клієнта
-            print(self.client)
             self.client.add_one_client(self.db, self.table_name) # додаємо клієнта у бд
 
             # повідомлення
@@ -390,12 +383,12 @@ class Form:
             file_window.protocol("WM_DELETE_WINDOW", on_close_file_window)
 
     def reset(self):
-        self.first_name_entry.config(highlightbackground="white", highlightthickness=1)
-        self.middle_name_entry.config(highlightbackground="white", highlightthickness=1)
-        self.last_name_entry.config(highlightbackground="white", highlightthickness=1)
+        self.first_name_entry.config(highlightbackground="", highlightthickness=0)
+        self.middle_name_entry.config(highlightbackground="", highlightthickness=0)
+        self.last_name_entry.config(highlightbackground="", highlightthickness=0)
         if self.gender_combobox.get() == '!!!!!!!!!!!!!':
             self.gender_combobox.set("")
-        self.birth_date_entry.config(highlightbackground="white", highlightthickness=1)
+        self.birth_date_entry.config(highlightbackground="", highlightthickness=0)
 
     def search_client(self):
         self.remember_client()
@@ -413,15 +406,11 @@ class Form:
         position_top = int(screen_height / 2 - window_height / 2)
         position_left = int(screen_width / 2 - window_width / 2)
         result_window.geometry(f"{window_width}x{window_height}+{position_left}+{position_top}")  # Центруємо вікно
-
-        # Додаємо фон і стиль вікна для відповідності основній формі
         result_window.config(bg=self.window_bg_color)
 
-        # Створюємо таблицю для результатів
+        # таблиця результатів
         my_table = ttk.Treeview(result_window, columns=(
         "Прізвище", "Ім'я", "По батькові", "Стать", "Вік", "Дата народження", "Дата смерті"), show="headings")
-
-        # Налаштовуємо заголовки стовпців
         my_table.heading("Прізвище", text="Прізвище")
         my_table.heading("Ім'я", text="Ім'я")
         my_table.heading("По батькові", text="По батькові")
@@ -430,7 +419,6 @@ class Form:
         my_table.heading("Дата народження", text="Дата народження")
         my_table.heading("Дата смерті", text="Дата смерті")
 
-        # Налаштовуємо ширину стовпців
         my_table.column("Прізвище", width=100)
         my_table.column("Ім'я", width=100)
         my_table.column("По батькові", width=100)
@@ -442,12 +430,10 @@ class Form:
         # Вставляємо знайдені дані у таблицю
         if clients:
             for client_id, client in clients.items():
-                # Обчислюємо вік клієнта
                 birth_date = datetime.strptime(client.birth_date, "%d.%m.%Y")
                 today = datetime.today()
                 age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
-                # Вставляємо рядок у таблицю
                 my_table.insert("", tk.END, values=(
                     client.last_name,
                     client.first_name,
@@ -458,13 +444,10 @@ class Form:
                     client.death_date
                 ))
         else:
-            # Якщо клієнтів не знайдено, показуємо повідомлення
-            my_table.insert("", tk.END, values=("Не знайдено клієнтів", "", "", "", "", "", ""))
+            my_table.insert("", tk.END, values=("Не знайдено", "", "", "", "", "", ""))
 
-        # Розміщуємо таблицю
         my_table.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Кнопка закриття вікна
         close_button = tk.Button(result_window, text="ЗАКРИТИ", command=result_window.destroy,
                                  width=15, fg="black", compound="center",
                                  font="black", pady=5,
@@ -473,28 +456,6 @@ class Form:
                                  highlightbackground=self.label_color,
                                  highlightcolor=self.label_color)
         close_button.pack(pady=10)
-
-    # def delete_client(self):
-    #     self.remember_client()
-    #     clients = self.client.find_clients(self.db, self.table_name,export_to_csv = False)
-    #     # вікно для результатів пошуку
-    #     result_window = tk.Toplevel(self.window)
-    #     result_window.title("Видалені клієнти")
-    #     result_window.geometry("500x400")
-    #     result_text = tk.Text(result_window, width=60, height=15, wrap=tk.WORD, bg="lightblue",
-    #                           fg="#4B8BD4", font=("Arial", 10))
-    #     result_text.pack(padx=10, pady=10)
-    #     close_button = tk.Button(result_window, text="Закрити", command=result_window.destroy)
-    #     close_button.pack(pady=5)
-    #
-    #     if clients:
-    #         self.client.delete_client(self.db, self.table_name)
-    #         result_text.insert(tk.END, f"Видалено!")
-    #         self.clear_entries()
-    #         self.update_client_count()
-    #     else:
-    #         result_text.insert(tk.END, f"Клієнта для видалення не знайдено!")
-    import tkinter.messagebox as messagebox
 
     def delete_client(self):
         # Показуємо підтвердження перед видаленням
@@ -531,44 +492,3 @@ class Form:
         self.death_date_entry.delete(0, tk.END)
         self.age_value_label.config(text="0")
         self.gender_combobox.set("")
-
-    # методи підказок
-    def on_clear(self):
-        self.help_text.config(text="Кнопка створення клієнта")
-        self.help_text2.config(text="Можна записати з форми або із файла")
-
-    def off_clear(self):
-        self.help_text.config(text="")
-        self.help_text2.config(text="")
-
-    def on_find(self):
-        self.help_text.config(text="Кнопка пошуку клієнта")
-        self.help_text2.config(text="Дані автоматично зберігаються у файл")
-
-    def off_find(self):
-        self.help_text.config(text="")
-        self.help_text2.config(text="")
-
-    def on_del(self):
-        self.help_text.config(text="Кнопка видалення клієнта")
-        self.help_text2.config(text="")
-
-    def off_del(self):
-        self.help_text.config(text="")
-        self.help_text2.config(text="")
-
-    def on_a(self):
-        self.help_text.config(text="Кнопка автоматичного заповнення")
-        self.help_text2.config(text="Дані для тестування")
-
-    def off_a(self):
-        self.help_text.config(text="")
-        self.help_text2.config(text="")
-
-    def on_o(self):
-        self.help_text.config(text="Очищення форми")
-        self.help_text2.config(text="")
-
-    def off_o(self):
-        self.help_text.config(text="")
-        self.help_text2.config(text="")
