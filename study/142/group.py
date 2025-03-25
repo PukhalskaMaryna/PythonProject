@@ -1,4 +1,4 @@
-from c3 import ErrorForMaxCount
+from error import ErrorForMaxCount
 
 class Group:
     def __init__(self, number):
