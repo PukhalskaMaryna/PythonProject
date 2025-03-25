@@ -453,6 +453,9 @@ class Form:
                                  highlightcolor=self.label_color)
         close_button.pack(pady=10)
 
+        self.clear_entries()
+        self.update_client_count()
+
     def delete_client(self):
         confirm = messagebox.askyesno("Підтвердження", "Ви впевнені, що хочете видалити?")
 
