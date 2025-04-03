@@ -1,28 +1,43 @@
-import math
 from typing import Tuple
+
+class Point:
+    def __init__(self, x: int, y: int, z: int) -> None:
+        """
+        точка
+
+        :param x: Координата x точки.
+        :param y: Координата y точки.
+        :param z: Координата z точки.
+        """
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __str__(self):
+        return f"Point({self.x}, {self.y}, {self.z})"
 
 
 class Plane:
-    def __init__(self, point: Tuple[float, float, float], normal: Tuple[float, float, float]):
+    def __init__(self, point: Point, normal: Tuple[int, int, int]):
         """
-        Ініціалізує площину, задану точкою та нормальним вектором.
+        визначаємо площину, задану точкою та нормальним вектором.
 
-        :param point: Точка на площині (x, y, z).
-        :param normal: Нормальний вектор до площини (nx, ny, nz).
+        :param point: Точка на площині.
+        :param normal: нормальний вектор до площини (nx, ny, nz).
         """
         self.point = point
         self.normal = normal
 
-    def __repr__(self):
+    def __str__(self):
         return f"Plane(Point: {self.point}, Normal: {self.normal})"
 
-    def multiply_sets(self, other: "Plane") -> "Line":
+    def cross_with_plane(self, other: "Plane") -> "Line":
         """
-        Знаходить пряму перетину двох площин, якщо така існує.
+        пряма перетину площин
 
         :param other: Інша площина.
-        :return: Об'єкт класу Line, що представляє пряму перетину двох площин.
-        :raises ValueError: Якщо площини паралельні і не перетинаються.
+        :return: Об'єкт класу Line, що представляє пряму перетину двох площин
+        :raises ValueError: Якщо площини паралельні та не перетинаються
         """
         # Визначення напрямного вектора прямої перетину (векторний добуток нормалей площин)
         normal1 = self.normal
@@ -30,46 +45,50 @@ class Plane:
 
         # Визначаємо вектор, що є вектором напрямку прямої перетину
         cross_product = (
-            normal1[1] * normal2[2] - normal1[2] * normal2[1],  # x
-            normal1[2] * normal2[0] - normal1[0] * normal2[2],  # y
-            normal1[0] * normal2[1] - normal1[1] * normal2[0]  # z
+            normal1[1] * normal2[2] - normal1[2] * normal2[1],
+            normal1[2] * normal2[0] - normal1[0] * normal2[2],
+            normal1[0] * normal2[1] - normal1[1] * normal2[0]
         )
 
         # Якщо вектор напрямку прямої перетину нульовий, то площини паралельні або однакова, перетину немає
         if cross_product == (0, 0, 0):
-            raise ValueError("Площини паралельні або однакові, перетину немає.")
+            raise ValueError("не перетинаються")
 
-        # Знаходимо точку перетину двох площин
-        # Виписуємо рівняння площин:
-        #   A1*x + B1*y + C1*z = D1  (для першої площини)
-        #   A2*x + B2*y + C2*z = D2  (для другої площини)
-        # Розв'язуємо систему лінійних рівнянь для визначення точки перетину
-
-        x1, y1, z1 = self.point
-        x2, y2, z2 = other.point
+        # Витягуємо координати точок
+        x1, y1, z1 = self.point.x, self.point.y, self.point.z
+        x2, y2, z2 = other.point.x, other.point.y, other.point.z
 
         # Параметри площин
-        A1, B1, C1 = self.normal
-        A2, B2, C2 = other.normal
+        a1, b1, c1 = self.normal
+        a2, b2, c2 = other.normal
 
         # Розв'язуємо рівняння для визначення параметра t
-        denominator = A1 * B2 - B1 * A2
+        denominator = a1 * b2 - b1 * a2
         if denominator == 0:
-            raise ValueError("Не можна знайти точку перетину, перевірте площини.")
+            raise ValueError("не перетинаються")
 
-        # Для спрощення розв'язку, припустимо, що точка перетину буде на прямій
-        t = ((x1 - x2) * B2 - (y1 - y2) * A2) / denominator
+        # точка перетину
+        t = ((x1 - x2) * b2 - (y1 - y2) * a2) / denominator
+
+        # Перевірка чи t є цілим числом
+        if not t.is_integer():
+            raise ValueError(f"Параметр t={t} не є цілим числом.")
 
         # Тепер знаходимо точку на прямій перетину
-        intersection_point = (x1 + t * A1, y1 + t * B1, z1 + t * C1)
+        intersection_point = Point(x1 + t * a1, y1 + t * b1, z1 + t * c1)
+
+        # Перевірка чи точка має цілі координати
+        if not (
+                intersection_point.x.is_integer() and intersection_point.y.is_integer() and intersection_point.z.is_integer()):
+            raise ValueError(f"Точка перетину {intersection_point} не має цілих координат.")
 
         # Повертаємо об'єкт типу Line для прямої перетину
         direction = cross_product  # напрямний вектор для прямої перетину
         return Line(intersection_point, direction)
 
-    def intersection_with_line(self, line: "Line") -> Tuple[float, float, float]:
+    def cross_with_line(self, line: "Line") -> Point:
         """
-        Знаходить точку перетину площини та прямої, якщо така є.
+        точка перетину площини та прямої, якщо така є
 
         :param line: Об'єкт класу Line, що представляє пряму.
         :return: Точка перетину площини та прямої.
@@ -89,8 +108,8 @@ class Plane:
             raise ValueError("Пряма паралельна площині і не перетинається з нею.")
 
         # Розв'язуємо для параметра t (відстань по прямій до точки перетину)
-        x0, y0, z0 = self.point
-        x1, y1, z1 = line_point
+        x0, y0, z0 = self.point.x, self.point.y, self.point.z
+        x1, y1, z1 = line_point.x, line_point.y, line_point.z
 
         t = ((x0 - x1) * normal[0] + (y0 - y1) * normal[1] + (z0 - z1) * normal[2]) / dot_product
 
@@ -100,7 +119,7 @@ class Plane:
 
     def are_parallel(self, other: "Plane") -> bool:
         """
-        Перевіряє, чи є дві площини паралельними.
+        чи є дві площини паралельними.
 
         :param other: Інша площина.
         :return: True, якщо площини паралельні, False, якщо не паралельні.
@@ -108,12 +127,11 @@ class Plane:
         # Площини паралельні, якщо їх нормальні вектори лінійно залежні
         normal1 = self.normal
         normal2 = other.normal
-        return normal1[0] * normal2[1] == normal1[1] * normal2[0] and normal1[0] * normal2[2] == normal1[2] * normal2[
-            0] and normal1[1] * normal2[2] == normal1[2] * normal2[1]
+        return normal1[0] * normal2[1] == normal1[1] * normal2[0] and normal1[0] * normal2[2] == normal1[2] * normal2[0] and normal1[1] * normal2[2] == normal1[2] * normal2[1]
 
     def is_parallel_to_line(self, line: "Line") -> bool:
         """
-        Перевіряє, чи є площина паралельною прямій.
+        чи є площина паралельною прямій.
 
         :param line: Пряма, яку перевіряємо на паралельність з площиною.
         :return: True, якщо площина паралельна прямій, False, якщо не паралельна.
@@ -125,34 +143,34 @@ class Plane:
 
 
 class Line:
-    def __init__(self, point: Tuple, direction: Tuple):
+    def __init__(self, point: Point, direction: Tuple[int, int, int]):
         """
-        Ініціалізує пряму, задану точкою та напрямним вектором.
+        пряма, задана точкою та напрямним вектором
 
-        :param point: Точка на прямій (x, y, z).
+        :param point: Точка на прямій.
         :param direction: Напрямний вектор прямої (dx, dy, dz).
         """
         self.point = point
         self.direction = direction
 
-    def get_parametric_equation(self, t: int) -> Tuple[float, float, float]:
+    def get_point_in_moment_time(self, t: int) -> Point:
         """
-        Отримує точку на прямій для певного значення параметра t.
+        точка на прямій для певного значення параметра t
 
         :param t: Ціле невід'ємне число, параметр прямої.
         :return: Точка (x, y, z) на прямій для даного t.
         """
-        x = self.point[0] + t * self.direction[0]
-        y = self.point[1] + t * self.direction[1]
-        z = self.point[2] + t * self.direction[2]
-        return (x, y, z)
+        x = self.point.x + t * self.direction[0]
+        y = self.point.y + t * self.direction[1]
+        z = self.point.z + t * self.direction[2]
+        return Point(x, y, z)
 
-    def __repr__(self):
+    def __str__(self):
         return f"Line(Point: {self.point}, Direction: {self.direction})"
 
     def are_parallel(self, other: "Line") -> bool:
         """
-        Перевіряє, чи є дві прямі паралельними.
+        чи є дві прямі паралельними
 
         :param other: Інша пряма.
         :return: True, якщо прямі паралельні, False, якщо не паралельні.
@@ -165,7 +183,7 @@ class Line:
 
     def are_skew(self, other: "Line") -> bool:
         """
-        Перевіряє, чи є дві прямі мимобіжними.
+        чи є дві прямі мимобіжними
 
         :param other: Інша пряма.
         :return: True, якщо прямі мимобіжні, False, якщо вони перетинаються або паралельні.
@@ -179,7 +197,7 @@ class Line:
 
     def find_plane(self, other: "Line") -> "Plane":
         """
-        Знаходить площину, що проходить через дві прямі, якщо вони не мимобіжні.
+        площина, що проходить через дві прямі, якщо вони не мимобіжні
 
         :param other: Інша пряма.
         :return: Об'єкт класу Plane, що представляє площину, яка проходить через ці дві прямі.
@@ -208,7 +226,7 @@ class Line:
 
 def read_lines_from_file(file_path: str) -> list:
     """
-    Читання файлу та створення об'єктів класу Line з кожного рядка.
+    читання файлу та створення об'єктів класу Line з кожного рядка
 
     :param file_path: Шлях до текстового файлу.
     :return: Список об'єктів класу Line.
@@ -220,25 +238,33 @@ def read_lines_from_file(file_path: str) -> list:
             # Читаємо кожен рядок, розділяючи числа через кому
             parts = line.strip().split(',')
             # Перетворюємо значення на числа з плаваючою комою
-            x, y, z, dx, dy, dz = map(float, parts)
+            x, y, z, dx, dy, dz = map(int, parts)
+            # Створюємо об'єкт класу Point для точок
+            point = Point(x, y, z)
+            direction = (dx, dy, dz)
             # Створюємо об'єкт класу Line та додаємо його до списку
-            lines.append(Line((x, y, z), (dx, dy, dz)))
+            lines.append(Line(point, direction))
 
     return lines
-
 
 def find_first_non_skew(lines: list) -> Tuple[Line, Line]:
     """
     Знаходить першу пару прямих, які не є мимобіжними.
 
     :param lines: Список об'єктів класу Line.
-    :return: Перша пара прямі, які не є мимобіжними, як кортеж з двох об'єктів Line.
+    :return: Перша пара прямих, які не є мимобіжними, як кортеж з двох об'єктів Line.
     :raises ValueError: Якщо всі прямі мимобіжні.
     """
     for i in range(len(lines)):
         for j in range(i + 1, len(lines)):
             if not lines[i].are_skew(lines[j]):
                 return lines[i], lines[j]
-    raise ValueError("Всі прямі є мимобіжними.")
+    raise ValueError("всі є мимобіжними")
 
+
+# test skew
+# 1 - all skew
+# 2 - find two lines not skew
+
+# 1
 
